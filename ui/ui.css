@@ -1,0 +1,242 @@
+/* =========================================
+   UI.CSS - FEUDO BRUTAL
+   Estética Dark Medieval (Strict Assets)
+========================================= */
+
+:root {
+    --text-primary: #e0d8c0;
+    --text-accent: #c49a45;
+    --border-iron: #1a1a1a;
+}
+
+/* Tipografia Estrita */
+@font-face {
+    font-family: 'MedievalTitle';
+    src: url('assets/fonts/Cinzel-Bold.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'MedievalText';
+    src: url('assets/fonts/CormorantGaramond-Regular.woff2') format('woff2');
+}
+
+/* Reset de Jogo */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+body, html {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #000;
+}
+
+/* Container de Renderização (Canvas) */
+#game-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+/* Camada HUD (Invisível para cliques, exceto nos painéis) */
+#ui-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Texturas Base */
+.panel-dark-wood {
+    background-image: url('assets/ui/dark_wood_panel.png');
+    border: 3px solid var(--border-iron);
+    box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.8), 0 5px 15px rgba(0, 0, 0, 0.9);
+    pointer-events: auto;
+}
+
+.panel-dark-parchment {
+    background-image: url('assets/ui/dark_parchment.png');
+    border: 2px solid var(--border-iron);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.8);
+    pointer-events: auto;
+}
+
+/* =========================================
+   TOP BAR (Recursos e Tempo)
+========================================= */
+.top-bar {
+    display: flex;
+    align-items: center;
+    padding: 10px 25px;
+    height: 60px;
+    font-family: 'MedievalTitle';
+    font-size: 1.2rem;
+    color: var(--text-primary);
+    text-shadow: 2px 2px 4px #000;
+}
+
+.resource-group {
+    display: flex;
+    align-items: center;
+    margin-right: 30px;
+}
+
+.icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 8px;
+}
+
+.spacer {
+    flex-grow: 1;
+}
+
+.time-group {
+    display: flex;
+    gap: 20px;
+}
+
+.text-accent {
+    color: var(--text-accent);
+}
+
+/* =========================================
+   SIDE PANEL (Inspetor de Entidades)
+========================================= */
+.side-panel {
+    position: absolute;
+    top: 80px;
+    right: 20px;
+    width: 320px;
+    padding: 20px;
+    font-family: 'MedievalText';
+    color: var(--text-primary);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.side-panel.hidden {
+    transform: translateX(400px);
+}
+
+.text-title {
+    font-family: 'MedievalTitle';
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+    border-bottom: 1px solid var(--border-iron);
+    padding-bottom: 5px;
+    text-shadow: 1px 1px 2px #000;
+}
+
+.text-subtitle {
+    font-style: italic;
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+    color: rgba(224, 216, 192, 0.7);
+}
+
+/* Barras de Status */
+.stats-container {
+    margin-bottom: 20px;
+}
+
+.stat-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+}
+
+.stat-row span {
+    width: 30%;
+}
+
+.bar-bg {
+    width: 70%;
+    height: 16px;
+    background-image: url('assets/ui/bar_bg_dark.png');
+    border: 1px solid var(--border-iron);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.8);
+}
+
+.bar-fill {
+    height: 100%;
+    transition: width 0.3s ease-out;
+}
+
+.fill-red { background-image: url('assets/ui/bar_fill_red.png'); }
+.fill-blue { background-image: url('assets/ui/bar_fill_blue.png'); }
+.fill-gold { background-image: url('assets/ui/bar_fill_gold.png'); }
+
+.task-container {
+    padding-top: 15px;
+    border-top: 1px solid var(--border-iron);
+    font-size: 1.1rem;
+}
+
+#inspector-task {
+    margin-top: 5px;
+    font-family: 'MedievalTitle';
+    font-size: 1.2rem;
+}
+
+/* =========================================
+   BOTTOM BAR (Menu de Construção)
+========================================= */
+.bottom-bar {
+    align-self: center;
+    display: flex;
+    gap: 15px;
+    padding: 15px 25px;
+    margin-bottom: 20px;
+    border-radius: 8px 8px 0 0;
+}
+
+.build-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 96px;
+    height: 96px;
+    background-image: url('assets/ui/iron_button_normal.png');
+    background-size: cover;
+    border: none;
+    cursor: pointer;
+    font-family: 'MedievalTitle';
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    text-shadow: 1px 1px 3px #000;
+    transition: transform 0.1s;
+}
+
+.build-btn:hover {
+    background-image: url('assets/ui/iron_button_hover.png');
+    transform: translateY(-2px);
+}
+
+.build-btn:active {
+    background-image: url('assets/ui/iron_button_active.png');
+    transform: translateY(2px);
+}
+
+.icon-large {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 8px;
+    pointer-events: none; /* Evita bug de clique na imagem em vez do botão */
+}
