@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feudo Brutal - City Builder</title>
+    <link rel="stylesheet" href="ui.css">
+    <style>/* Variáveis de Tema: Dark Medieval */
+:root {
+    --text-primary: #e0d8c0;
+    --text-accent: #c49a45;
+    --border-iron: #1a1a1a;
+    --bar-red: #8b0000;
+    --bar-blue: #1e3a8a;
+    --bar-gold: #b8860b;
+}
+
+/* Tipografia Estrita (Sem fallbacks) */
+@font-face {
+    font-family: 'MedievalTitle';
+    src: url('assets/fonts/Cinzel-Bold.woff2');
+}
+
+@font-face {
+    font-family: 'MedievalText';
+    src: url('assets/fonts/CormorantGaramond-Regular.woff2');
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+}
+
+body, html {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #000; /* Fundo absoluto sob o canvas */
+}
+
+/* Container do Jogo (Onde a engine renderiza) */
+#game-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+/* Camada de UI (Ignora cliques onde for transparente) */
+#ui-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Texturas Estritas (Sem cores de fallback) */
+.panel-dark-wood {
+    background-image: url('assets/ui/dark_wood_panel.png');
+    border: 3px solid var(--border-iron);
+    box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.8), 0 5px 15px rgba(0, 0, 0, 0.9);
+    pointer-events: auto;
+}
+
+.panel-dark-parchment {
+    background-image: url('assets/ui/dark_parchment.png');
+    border: 2px solid var(--border-iron);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.8);
+    pointer-events: auto;
+}
+
+/* Top Bar */
+.top-bar {
+    display: flex;
+    align-items: center;
+    padding: 10px 25px;
+    height: 60px;
+    font-family: 'MedievalTitle';
+    font-size: 1.2rem;
+    color: var(--text-primary);
+}
+
+.resource-group {
+    display: flex;
+    align-items: center;
+    margin-right: 30px;
+}
+
+.icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 8px;
+}
+
+.spacer {
+    flex-grow: 1;
+}
+
+.time-group {
+    display: flex;
+    gap: 20px;
+}
+
+.text-accent {
+    color: var(--text-accent);
+}
+
+/* Side Panel (Inspetor) */
+.side-panel {
+    position: absolute;
+    top: 80px;
+    right: 20px;
+    width: 320px;
+    padding: 20px;
+    font-family: 'MedievalText';
+    color: var(--text-primary);
+    transition: transform 0.3s ease-out;
+}
+
+.side-panel.hidden {
+    transform: translateX(400px);
+}
+
+.text-title {
+    font-family: 'MedievalTitle';
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+    border-bottom: 1px solid var(--border-iron);
+    padding-bottom: 5px;
+}
+
+.text-subtitle {
+    font-style: italic;
+    margin-bottom: 20px;
+    color: #a0a0a0;
+}
+
+.stat-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.bar-bg {
+    width: 70%;
+    height: 12px;
+    background-image: url('assets/ui/bar_bg_dark.png');
+    border: 1px solid var(--border-iron);
+}
+
+.bar-fill {
+    height: 100%;
+    transition: width 0.2s;
+}
+
+.fill-red { background-image: url('assets/ui/bar_fill_red.png'); }
+.fill-blue { background-image: url('assets/ui/bar_fill_blue.png'); }
+.fill-gold { background-image: url('assets/ui/bar_fill_gold.png'); }
+
+.task-container {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px dashed #444;
+}
+
+/* Bottom Bar (Construção) */
+.bottom-bar {
+    align-self: center;
+    display: flex;
+    gap: 15px;
+    padding: 10px 20px;
+    margin-bottom: 20px;
+    border-radius: 8px 8px 0 0;
+}
+
+.build-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    background-image: url('assets/ui/iron_button_normal.png');
+    border: none;
+    cursor: pointer;
+    font-family: 'MedievalTitle';
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    transition: transform 0.1s;
+}
+
+.build-btn:hover {
+    background-image: url('assets/ui/iron_button_hover.png');
+    transform: scale(1.05);
+}
+
+.build-btn:active {
+    background-image: url('assets/ui/iron_button_active.png');
+    transform: scale(0.95);
+}
+
+.icon-large {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 5px;
+}</style>
+</head>
+<body>
+    <div id="game-container"></div>
+
+    <div id="ui-layer">
+        
+        <header class="top-bar panel-dark-wood">
+            <div class="resource-group">
+                <img src="assets/icons/food.png" alt="Comida" class="icon">
+                <span id="res-food" class="text-value">150</span>
+            </div>
+            <div class="resource-group">
+                <img src="assets/icons/wood.png" alt="Madeira" class="icon">
+                <span id="res-wood" class="text-value">320</span>
+            </div>
+            <div class="resource-group">
+                <img src="assets/icons/stone.png" alt="Pedra" class="icon">
+                <span id="res-stone" class="text-value">45</span>
+            </div>
+            
+            <div class="spacer"></div>
+            
+            <div class="time-group">
+                <span id="time-season" class="text-accent">Primavera</span>
+                <span id="time-day" class="text-value">Dia 1 - 08:00</span>
+            </div>
+        </header>
+
+        <aside class="side-panel panel-dark-parchment hidden" id="entity-inspector">
+            <h2 id="inspector-name" class="text-title">Aldous Mão-Gélida</h2>
+            <p id="inspector-role" class="text-subtitle">Lenhador</p>
+            
+            <div class="stats-container">
+                <div class="stat-row">
+                    <span>Fome:</span>
+                    <div class="bar-bg"><div id="bar-hunger" class="bar-fill fill-red" style="width: 80%;"></div></div>
+                </div>
+                <div class="stat-row">
+                    <span>Frio:</span>
+                    <div class="bar-bg"><div id="bar-warmth" class="bar-fill fill-blue" style="width: 100%;"></div></div>
+                </div>
+                <div class="stat-row">
+                    <span>Humor:</span>
+                    <div class="bar-bg"><div id="bar-happiness" class="bar-fill fill-gold" style="width: 50%;"></div></div>
+                </div>
+            </div>
+            
+            <div class="task-container">
+                <span>Tarefa Atual:</span>
+                <p id="inspector-task" class="text-accent">Cortando Madeira</p>
+            </div>
+        </aside>
+
+        <footer class="bottom-bar panel-dark-wood">
+            <button class="build-btn action-iron" data-building="house">
+                <img src="assets/icons/house.png" alt="Casa" class="icon-large">
+                <span>Cabana</span>
+            </button>
+            <button class="build-btn action-iron" data-building="farm">
+                <img src="assets/icons/farm.png" alt="Fazenda" class="icon-large">
+                <span>Fazenda</span>
+            </button>
+            <button class="build-btn action-iron" data-building="wall">
+                <img src="assets/icons/wall.png" alt="Muralha" class="icon-large">
+                <span>Muralha</span>
+            </button>
+        </footer>
+        
+    </div>
+    
+    <script type="module" src="core/main.js"></script>
+</body>
+</html>
