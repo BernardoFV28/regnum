@@ -53,9 +53,27 @@
         import { DeterministicGameLoop } from './game-loop.js';
         import { SystemsPipeline } from './systems-pipeline.js';
         import { VisceralRenderPipeline } from './visual-effects.js';
-        import { BiopunkAudioEngine } from './audio-engine.js';
-
-        // Inicialização de Barramento Global Síncrono de Eventos
+         import { BiopunkAudioEngine } from './audio-engine.js';
+                
+        import { SocialSimulationSystem } from './social-simulation.js';
+        import { BiopunkAIDirector } from './ai-director.js';
+        import { FastPathfinder } from './pathfinding-lowlatency.js';
+        import { CinematicCrisisDirector } from './crisis-director.js';
+        
+        
+        const socialSys = new SocialSimulationSystem();
+        importAI = new BiopunkAIDirector();
+        const pathfinder = new FastPathfinder(64, 64);
+        const crisisDirector = new CinematicCrisisDirector();
+        window.Events.on('CRISIS_TRIGGERED', (data) => {
+            crisisDirector.triggerCrisis(data.type, GameState);
+        });
+        function tickSubsystems(ecs, dt, GameState) {
+            pathfinder.processWalkingPool(ecs, dt);
+            socialSys.update(ecs, dt, GameState);
+            importAI.executeTacticalTick(ecs, GameState, dt);
+            crisisDirector.update(GameState, ecs, dt);
+        }
         class InternalBus {
             constructor() { this.m = new Map(); }
             on(e, c) { if(!this.m.has(e)) this.m.set(e,[]); this.m.get(e).push(c); }
