@@ -1,6 +1,12 @@
+// colonymanager.js
+
 export class ColonyManager {
     constructor() {
+        // Estado de Tempo e Atmosfera
         this.day = 1;
+        this.weather = 'CALMARIA MORTA';
+        
+        // Estado Central e Psicológico
         this.resources = { 
             name: "Núcleo Alfa",
             biomass: 200, 
@@ -8,9 +14,11 @@ export class ColonyManager {
             steam: 100,
             maxSteam: 100, 
             population: 30, 
-            defense: 40 
+            defense: 40,
+            insanity: 0 // A métrica do desespero
         };
 
+        // Catálogo de Construções Biopunk
         this.buildings = [
             { id: 'incubadora', name: 'Incubadora de Carne', count: 1, cost: { copper: 50 }, prod: 'biomass', rate: 5 },
             { id: 'extrator', name: 'Extrator de Cobre', count: 1, cost: { biomass: 60 }, prod: 'copper', rate: 3 },
@@ -25,6 +33,7 @@ export class ColonyManager {
     }
 
     init() {
+        // Inicia o ciclo vital: 1 tick = 2 segundos simulados
         setInterval(() => this.simulationTick(), 2000);
         this.renderCityGrid();
         this.updateUI();
@@ -32,29 +41,76 @@ export class ColonyManager {
 
     advanceDay() {
         this.day++;
+        
+        // 1. Sistema Procedural de Clima Extremo (Roleta Viciada)
+        const weathers = [
+            { name: 'CALMARIA MORTA', chance: 50 },
+            { name: 'NEVASCA CORTANTE', chance: 20 },
+            { name: 'CHUVA ÁCIDA', chance: 20 },
+            { name: 'ECLIPSE MECÂNICO', chance: 10 }
+        ];
+        
+        const rand = Math.random() * 100;
+        let sum = 0;
+        for (let w of weathers) {
+            sum += w.chance;
+            if (rand <= sum) {
+                this.weather = w.name;
+                break;
+            }
+        }
+        
+        // Log visual da mudança climática
+        let weatherColor = this.weather === 'CALMARIA MORTA' ? 'text-zinc-500' : 'text-amber-500';
+        Events.emit('COMBAT_LOG', { text: `DIA ${this.day}: A atmosfera mudou para <span class="${weatherColor} font-bold">${this.weather}</span>.` });
+
+        // 2. Acionador de Eventos Narrativos (25% de chance por dia)
+        if (Math.random() < 0.25) {
+            Events.emit('TRIGGER_NARRATIVE');
+        }
+
+        // 3. Atualização da Interface de Tempo
         document.getElementById('day-counter').innerText = `DIA ${this.day.toString().padStart(2, '0')}`;
         const daysLeft = 10 - (this.day % 10 === 0 ? 10 : this.day % 10);
         document.getElementById('days-left').innerText = daysLeft;
     }
 
     simulationTick() {
-        this.resources.steam -= 6;
+        // 1. Dreno Térmico Baseado no Clima
+        let steamDrain = 6;
+        if (this.weather === 'NEVASCA CORTANTE') steamDrain = 14; // Dobro do frio
+        
+        // 2. Degradação Psicológica Passiva
+        if (this.weather === 'ECLIPSE MECÂNICO') this.resources.insanity += 2;
+        if (this.resources.biomass <= 10) this.resources.insanity += 1; // Fome contínua gera loucura
+        
+        this.resources.steam -= steamDrain;
         this.resources.biomass -= Math.floor(this.resources.population * 0.2);
 
+        // 3. Produção de Recursos (Afetada pelo Clima)
+        let productionMultiplier = 1.0;
+        if (this.weather === 'CHUVA ÁCIDA') productionMultiplier = 0.5; // Trabalhadores se escondem
+
         this.buildings.forEach(b => {
+            // A Caldeira e Muralha operam 100% idependente da chuva, o resto cai pela metade
+            let currentMult = (b.id === 'caldeira' || b.id === 'muralha') ? 1.0 : productionMultiplier;
+            
             if (this.resources.steam > 10) { 
-                this.resources[b.prod] += b.rate * b.count;
+                this.resources[b.prod] += Math.floor((b.rate * b.count) * currentMult);
             }
         });
 
-        if (this.resources.steam > this.resources.maxSteam) {
-            this.resources.steam = this.resources.maxSteam;
-        }
+        // 4. Correção e Travas de Limites
+        if (this.resources.steam > this.resources.maxSteam) this.resources.steam = this.resources.maxSteam;
+        if (this.resources.insanity > 100) this.resources.insanity = 100;
+        if (this.resources.insanity < 0) this.resources.insanity = 0;
 
+        // 5. Verificações de Crise Letal
         if (this.resources.steam <= 0) {
             this.resources.steam = 0;
             this.resources.population -= 2; 
-            Events.emit('COMBAT_LOG', { text: "CRÍTICO: Setores sem vapor! População está a congelar.", type: 'critical' });
+            Events.emit('COMBAT_LOG', { text: "CRÍTICO: O frio penetra a carne. -2 População.", type: 'critical' });
+            window.Events.emit('SCREEN_SHAKE', { intensity: 'light' });
         }
 
         if (this.resources.biomass <= 0) {
@@ -62,6 +118,16 @@ export class ColonyManager {
             this.resources.population -= 1; 
         }
 
+        // 6. O Evento de Loucura Máxima
+        if (this.resources.insanity >= 80 && Math.random() < 0.15) {
+            const deaths = Math.floor(Math.random() * 4) + 1;
+            this.resources.population -= deaths;
+            Events.emit('COMBAT_LOG', { text: `[ DELÍRIO ] ${deaths} cidadãos abraçaram as engrenagens e foram triturados.`, type: 'critical' });
+            this.resources.insanity -= 25; // O derramamento de sangue acalma a colônia temporariamente
+            window.Events.emit('SCREEN_SHAKE', { intensity: 'heavy' }); // Punição tátil
+        }
+
+        // Garante números positivos
         this.resources.biomass = Math.max(0, this.resources.biomass);
         this.resources.population = Math.max(0, this.resources.population);
 
@@ -85,15 +151,13 @@ export class ColonyManager {
             }
             
             b.count++;
-            Events.emit('COMBAT_LOG', { text: `Mutação concluída: +1 ${b.name}` });
-            
-            // GATILHO DO RENDERIZADOR: Posiciona a imagem no canvas 2D
-            Events.emit('STRUCTURE_BUILT', { id: buildingId });
+            Events.emit('COMBAT_LOG', { text: `Sintetização concluída: +1 ${b.name}` });
+            Events.emit('STRUCTURE_BUILT', { id: buildingId }); // Comunica o Canvas 2D
             
             this.renderCityGrid();
             this.updateUI();
         } else {
-            Events.emit('COMBAT_LOG', { text: "Recursos insuficientes para fundir metal e carne.", type: 'critical' });
+            Events.emit('COMBAT_LOG', { text: "Recursos orgânicos ou metálicos insuficientes para a mutação.", type: 'critical' });
         }
     }
 
@@ -138,6 +202,12 @@ export class ColonyManager {
         } else {
             tempText.innerText = "ESTÁVEL";
             tempText.className = "text-[10px] text-orange-500 font-bold tracking-widest";
+        }
+
+        // Lógica de injeção dinâmica de alerta de Insanidade no log (caso o HUD não suporte a barra de sanidade ainda)
+        if (this.resources.insanity > 75) {
+            tempText.innerText = "RISCO DE MOTIM";
+            tempText.className = "text-[10px] text-purple-500 font-bold animate-pulse tracking-widest";
         }
     }
 }
