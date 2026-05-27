@@ -2,225 +2,171 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Feudo Brutal: O Último Núcleo</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feudo Brutal: O Último Núcleo Core-AAA</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: { blood: '#8b0000', iron: '#1a1a1a', parchment: '#e0d8c0', void: '#050505' },
-                    fontFamily: { 'medieval': ['"Courier New"', 'Courier', 'monospace'] }
-                }
-            }
-        }
-    </script>
-
     <style>
-        body { 
-            background-color: theme('colors.void'); color: theme('colors.parchment'); 
-            font-family: theme('fontFamily.medieval'); user-select: none;
-        }
-        .vignette {
-            position: absolute; inset: 0; pointer-events: none;
-            box-shadow: inset 0 0 150px rgba(0,0,0,0.95); z-index: 40;
-        }
-        .panel { 
-            background: rgba(12, 12, 12, 0.85); backdrop-filter: blur(4px);
-            border: 1px solid theme('colors.iron'); border-top: 1px solid #333;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.9), 0 10px 30px rgba(0,0,0,0.5);
-        }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #0a0a0a; border-left: 1px solid #1a1a1a; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 0px; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
-        #loading-screen { transition: opacity 1.5s ease-in-out; }
-        .fade-out { opacity: 0; pointer-events: none; }
-        /* Adicione no topo do seu CSS */
-@keyframes shakeHeavy {
-    0% { transform: translate(1px, 1px) rotate(0deg); }
-    10% { transform: translate(-10px, -2px) rotate(-1deg); }
-    20% { transform: translate(-3px, 0px) rotate(1deg); }
-    30% { transform: translate(15px, 2px) rotate(0deg); }
-    40% { transform: translate(1px, -1px) rotate(1deg); }
-    50% { transform: translate(-10px, 2px) rotate(-1deg); }
-    60% { transform: translate(-3px, 1px) rotate(0deg); }
-    70% { transform: translate(15px, 1px) rotate(-1deg); }
-    80% { transform: translate(-1px, -1px) rotate(1deg); }
-    90% { transform: translate(10px, 2px) rotate(0deg); }
-    100% { transform: translate(1px, -2px) rotate(-1deg); }
-}
-
-.shake-heavy { animation: shakeHeavy 0.5s cubic-bezier(.36,.07,.19,.97) both; }
-
-.crt-glitch {
-    position: relative;
-}
-.crt-glitch::before {
-    content: " ";
-    display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-    z-index: 2; background-size: 100% 2px, 3px 100%; pointer-events: none;
-}
+        body { background-color: #030303; color: #e0d8c0; font-family: 'Courier New', Courier, monospace; overflow: hidden; }
+        .hud-panel { background: rgba(5, 5, 5, 0.9); border: 1px solid #1a1a1a; box-shadow: inset 0 0 15px rgba(0,0,0,0.9); }
+        @keyframes crtLines { 0% { background-position: 0 0; } 100% { background-position: 0 100%; } }
+        .crt-scanlines::after { content: " "; display: block; position: absolute; inset: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03)); z-index: 99; background-size: 100% 4px, 6px 100%; pointer-events: none; }
+        .shake-heavy { animation: extremeShake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes extremeShake { 0%, 100% { transform: translate(0, 0); } 10%, 90% { transform: translate(-4px, 2px); } 20%, 80% { transform: translate(4px, -2px); } 30%, 50%, 70% { transform: translate(-4px, -4px); } 40%, 60% { transform: translate(4px, 4px); } }
     </style>
 </head>
+<body class="h-screen w-screen relative select-none crt-scanlines">
 
-<body class="h-screen w-screen overflow-hidden flex flex-col relative text-sm">
+    <div id="render-viewport" class="absolute inset-0 z-0"></div>
 
-    <div id="game-container" class="absolute inset-0 z-0 bg-void"></div>
-    <div class="vignette"></div>
-
-    <div id="combat-overlay" class="hidden absolute inset-0 bg-red-950/90 z-50 flex items-center justify-center border-y-[12px] border-blood pointer-events-none transition-all duration-300">
-        <div class="text-center">
-            <h1 class="text-6xl text-red-500 font-black animate-pulse tracking-[0.5em] drop-shadow-[0_0_15px_rgba(255,0,0,0.8)]">INVASÃO DETECTADA</h1>
-            <div class="h-px w-full bg-red-500/50 my-6"></div>
-            <p class="text-2xl text-red-300 font-bold tracking-widest uppercase">Protocolo de Purgação Iniciado</p>
-        </div>
-    </div>
-
-    <div id="loading-screen" class="absolute inset-0 bg-void z-[100] flex flex-col items-center justify-center">
-        <h1 class="text-3xl text-zinc-500 font-bold tracking-[1em] mb-4">INICIANDO KERNEL</h1>
-        <div class="w-64 h-1 bg-zinc-900 overflow-hidden">
-            <div class="h-full bg-amber-600 animate-[pulse_1s_ease-in-out_infinite]" style="width: 100%"></div>
-        </div>
-    </div>
-
-    <div id="ui-layer" class="absolute inset-0 z-10 flex flex-col pointer-events-none">
+    <div id="hud-layer" class="absolute inset-0 z-10 pointer-events-none flex flex-col justify-between p-4">
         
-        <header class="panel flex justify-between items-center p-4 shrink-0 pointer-events-auto border-b border-zinc-800">
-            <div class="flex gap-10 pl-4">
-                <div class="flex items-center gap-3 text-green-600">
-                    <span class="text-2xl drop-shadow-[0_0_8px_rgba(34,197,94,0.4)]">🧬</span> 
-                    <div class="flex flex-col">
-                        <span class="text-[10px] uppercase text-zinc-500 font-bold tracking-widest">Biomassa</span>
-                        <span id="res-biomass" class="font-bold text-2xl leading-none">0</span>
-                    </div>
-                </div>
-                <div class="flex items-center gap-3 text-amber-600">
-                    <span class="text-2xl drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]">⚙️</span> 
-                    <div class="flex flex-col">
-                        <span class="text-[10px] uppercase text-zinc-500 font-bold tracking-widest">Cobre Forjado</span>
-                        <span id="res-copper" class="font-bold text-2xl leading-none">0</span>
-                    </div>
-                </div>
-                <div class="flex items-center gap-3 text-blue-400">
-                    <span class="text-2xl drop-shadow-[0_0_8px_rgba(96,165,250,0.4)]">👥</span> 
-                    <div class="flex flex-col">
-                        <span class="text-[10px] uppercase text-zinc-500 font-bold tracking-widest">Sobreviventes</span>
-                        <span id="res-population" class="font-bold text-2xl leading-none">0</span>
-                    </div>
-                </div>
+        <header class="hud-panel w-full flex justify-between items-center p-4 pointer-events-auto border-t border-t-zinc-800">
+            <div class="flex gap-12 font-mono text-xs">
+                <div class="flex flex-col"><span class="text-zinc-600 font-bold">🧬 BIOMASSA</span><span id="res-biomass" class="text-green-500 font-black text-xl">200</span></div>
+                <div class="flex flex-col"><span class="text-zinc-600 font-bold">⚙️ COBRE</span><span id="res-copper" class="text-amber-500 font-black text-xl">150</span></div>
+                <div class="flex flex-col"><span class="text-zinc-600 font-bold">👥 POPULAÇÃO</span><span id="res-population" class="text-blue-400 font-black text-xl">30</span></div>
+                <div class="flex flex-col"><span class="text-zinc-600 font-bold">🛡️ CONTENÇÃO</span><span id="res-defense" class="text-red-500 font-black text-xl">40</span></div>
+                <div class="flex flex-col"><span class="text-zinc-600 font-bold">🧠 INSANIDADE</span><span id="res-insanity" class="text-purple-500 font-black text-xl">0%</span></div>
             </div>
-
-            <div class="flex gap-8 text-right items-center border-l border-zinc-800/50 pl-8 pr-4">
-                <div class="flex flex-col justify-center">
-                    <span class="text-[10px] text-zinc-500 uppercase tracking-widest">Ataque em</span>
-                    <span class="text-red-500 font-black text-xl leading-none drop-shadow-[0_0_5px_rgba(220,38,38,0.5)]"><span id="days-left">10</span> DIAS</span>
-                </div>
-                <div><span id="day-counter" class="text-3xl font-black text-zinc-200 tracking-widest drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">DIA 01</span></div>
+            <div class="text-right">
+                <div id="weather-display" class="text-amber-600 text-xs font-black tracking-widest animate-pulse">ATMOSFERA: CALMARIA MORTA</div>
+                <div id="day-counter" class="text-xl font-bold text-zinc-300 font-mono mt-1">CICLO: DIA 01</div>
             </div>
         </header>
 
-        <main class="flex-grow flex justify-between p-6 overflow-hidden">
-            <section class="w-[350px] flex flex-col gap-4 pointer-events-auto">
-                <div class="panel p-4 rounded shadow-lg flex flex-col h-full">
-                    <div class="border-b border-zinc-800 pb-2 mb-4 flex justify-between items-end">
-                        <h2 class="text-sm font-bold text-parchment uppercase tracking-[0.2em]">Engenharia</h2>
-                        <span class="text-[9px] text-amber-600 animate-pulse">SISTEMA ONLINE</span>
+        <main class="flex-grow w-full flex justify-between items-end my-4 overflow-hidden">
+            <section class="w-80 hud-panel p-4 pointer-events-auto h-96 flex flex-col">
+                <div class="text-zinc-500 text-xs font-bold tracking-widest mb-3 uppercase border-b border-zinc-800 pb-2">Estruturas Disponíveis</div>
+                <div id="build-menu" class="flex-col gap-2 overflow-y-auto flex-grow pr-1">
                     </div>
-                    <div id="city-grid" class="flex flex-col gap-3 overflow-y-auto pr-2"></div>
-                </div>
             </section>
 
-            <aside class="w-[400px] flex flex-col gap-4 pointer-events-auto">
-                <div class="panel p-5 rounded shadow-lg border-t-2 border-t-orange-900/50">
-                    <div class="flex justify-between items-end border-b border-zinc-800 pb-2 mb-4">
-                        <h2 class="text-sm font-bold text-parchment uppercase tracking-[0.2em]">Núcleo Térmico</h2>
-                        <span id="colony-temp" class="text-[10px] font-bold text-orange-500 tracking-widest">ESTÁVEL</span>
-                    </div>
-                    <div class="flex justify-between text-xs text-zinc-400 mb-2 font-bold tracking-wider">
-                        <span>Pressão Interna</span>
-                        <span id="colony-steam" class="text-zinc-200">100 / 100</span>
-                    </div>
-                    <div class="w-full bg-black h-4 border border-zinc-700 p-[1px]">
-                        <div id="steam-meter" class="bg-gradient-to-r from-red-700 via-orange-600 to-amber-400 h-full transition-all duration-700 ease-out" style="width: 100%;"></div>
-                    </div>
-                </div>
-
-                <div class="panel flex-grow p-4 rounded shadow-lg flex flex-col overflow-hidden border-t-2 border-t-zinc-800">
-                    <h2 class="text-xs font-bold text-zinc-500 uppercase tracking-[0.2em] border-b border-zinc-800 pb-2 mb-3">Registro de Ocorrências</h2>
-                    <div id="colony-log" class="flex-grow overflow-y-auto text-[11px] flex flex-col gap-1.5 pr-2 font-mono"></div>
-                </div>
+            <aside class="w-96 hud-panel p-4 pointer-events-auto h-64 flex flex-col">
+                <div class="text-zinc-500 text-xs font-bold tracking-widest mb-2 border-b border-zinc-800 pb-1 uppercase">Log de Transmissão Biomecânica</div>
+                <div id="colony-log" class="flex-grow overflow-y-auto text-[10px] font-mono text-zinc-400 flex flex-col gap-1"></div>
             </aside>
         </main>
     </div>
 
     <script type="module">
-        import { EventBus } from './eventbus.js';
-        import { ColonyManager } from './colonymanager.js';
-        import { CrisisSystem } from './CrisisSystem.js';
-        import { WorldRenderer } from './WorldRenderer.js';
+        import { HighPerformanceECS, FixedTimestepLoop, ComponentRegistry } from './EngineCore.js';
+        import { AdvancedWeatherSystem, AdvancedEconomySystem, SocioPsychologySystem } from './Systems.js';
+        import { CinematicRenderSystem } from './RenderSystem.js';
+        import { GrandThreatDirector } from './DirectorSystem.js';
 
-        window.addEventListener('load', () => {
-            setTimeout(() => document.getElementById('loading-screen').classList.add('fade-out'), 800);
-        });
-
-        window.Events = new EventBus();
-
-        window.Events.on('COMBAT_LOG', (data) => {
-            const logBox = document.getElementById('colony-log');
-            const entry = document.createElement('div');
-            const time = new Date().toLocaleTimeString('pt-BR', { hour12: false });
-            
-            let colorClass = 'text-zinc-400';
-            if (data.type === 'critical') colorClass = 'text-red-500 font-bold';
-            else if (data.text.includes('+')) colorClass = 'text-green-500';
-            
-            entry.className = `${colorClass} border-l-2 border-zinc-700 pl-2 leading-tight opacity-0 transition-opacity duration-300`;
-            entry.innerHTML = `<span class="text-zinc-600 mr-2">[${time}]</span> ${data.text}`;
-            
-            logBox.prepend(entry);
-            requestAnimationFrame(() => entry.classList.remove('opacity-0'));
-        });
-
-        const crisis = new CrisisSystem();
-        window.Colony = new ColonyManager(); 
-        
-        const worldView = new WorldRenderer('game-container');
-
-        // Carrega estruturas iniciais no Canvas 2D
-        setTimeout(() => {
-            window.Events.emit('STRUCTURE_BUILT', { id: 'incubadora' });
-            window.Events.emit('STRUCTURE_BUILT', { id: 'extrator' });
-        }, 1500);
-
-        window.World = {
-            renderActiveCity: () => window.Colony.updateUI()
+        // Sistema Centralizado Globals de Estado (Data-Driven Architecture)
+        const GameState = {
+            ticks: 0,
+            currentWeather: 'CALMARIA_MORTA',
+            environmentalThermalModifier: 0,
+            sanityDegradationRate: 0.2,
+            infectionSpreadMultiplier: 1.0,
+            globalSteamPressure: 100,
+            resources: {
+                biomass: 200,
+                copper: 150,
+                population: 30,
+                defense: 40,
+                insanity: 0,
+                fanaticism: 0,
+                fear: 0,
+                maxSteam: 100
+            }
         };
 
-        setInterval(() => {
-            if (window.Colony && window.Colony.advanceDay) {
-                window.Colony.advanceDay();
-                window.Events.emit('DAY_ADVANCED', { day: window.Colony.day, activeCity: window.Colony.resources });
-            }
-        }, 5000);
+        // Instanciação do Barramento de Eventos Síncronos
+        class SimpleBus {
+            constructor() { this.listeners = {}; }
+            on(ev, cb) { if(!this.listeners[ev]) this.listeners[ev] = []; this.listeners[ev].push(cb); }
+            emit(ev, data) { if(this.listeners[ev]) this.listeners[ev].forEach(cb => cb(data)); }
+        }
+        window.Events = new SimpleBus();
 
-        setTimeout(() => {
-            window.Events.emit('COMBAT_LOG', { text: 'Sistema Biopunk inicializado. Gerencie seus recursos.'});
-        }, 1200);
-        import { NarrativeSystem } from './NarrativeSystem.js';
-        const narrative = new NarrativeSystem();
-        
-        window.Events.on('SCREEN_SHAKE', (data) => {
-            const body = document.body;
-            body.classList.add('shake-heavy');
-            setTimeout(() => body.classList.remove('shake-heavy'), 500);
+        // Escuta dos Eventos de Feedback Físico
+        window.Events.on('SCREEN_SHAKE', () => {
+            document.body.classList.add('shake-heavy');
+            setTimeout(() => document.body.classList.remove('shake-heavy'), 400);
         });
+
+        window.Events.on('COMBAT_LOG', (data) => {
+            const log = document.getElementById('colony-log');
+            const entry = document.createElement('div');
+            entry.className = data.type === 'critical' ? 'text-red-500 font-bold' : 'text-zinc-400';
+            entry.innerHTML = `> ${data.text}`;
+            log.prepend(entry);
+        });
+
+        // Inicialização do Core Engine e Sistemas Compartilhados
+        const ecs = new HighPerformanceECS();
+        const loop = new FixedTimestepLoop(60);
+        const renderer = new CinematicRenderSystem('render-viewport');
+        const director = new GrandThreatDirector();
+
+        // Registro de Sistemas no Processador ECS
+        ecs.registerSystem(new AdvancedWeatherSystem());
+        ecs.registerSystem(new AdvancedEconomySystem());
+        ecs.registerSystem(new SocioPsychologySystem());
+
+        // Injeção da População e Infraestrutura Inicial no Archetype ECS
+        const infrastructureMask = ComponentRegistry.IDs.Transform | ComponentRegistry.IDs.Renderable | ComponentRegistry.IDs.Infrastructure | ComponentRegistry.IDs.EconomicNode;
         
-        window.Events.on('CRT_GLITCH', (active) => {
-            if (active) document.body.classList.add('crt-glitch');
-            else document.body.classList.remove('crt-glitch');
+        ecs.createEntity(infrastructureMask, {
+            Transform: { x: 2, y: 3 },
+            Renderable: { spriteKey: 'incubadora' },
+            Infrastructure: { isOperational: true, tier: 1 },
+            EconomicNode: { outputResource: 'biomass', baseRate: 6, count: 1, inputResource: null, inputCost: 0 }
+        });
+
+        ecs.createEntity(infrastructureMask, {
+            Transform: { x: 5, y: 4 },
+            Renderable: { spriteKey: 'extrator' },
+            Infrastructure: { isOperational: true, tier: 1 },
+            EconomicNode: { outputResource: 'copper', baseRate: 4, count: 1, inputResource: 'biomass', inputCost: 2 }
+        });
+
+        // Inicialização do Loop e Pacer de Quadros Dinâmicos
+        loop.start(ecs, GameState, (alpha) => {
+            // Callback de Renderização Sincronizado
+            renderer.render(ecs, alpha, GameState);
+            
+            // Atualização da HUD em tempo real por amostragem
+            document.getElementById('res-biomass').innerText = Math.floor(GameState.resources.biomass);
+            document.getElementById('res-copper').innerText = Math.floor(GameState.resources.copper);
+            document.getElementById('res-population').innerText = Math.floor(GameState.resources.population);
+            document.getElementById('res-defense').innerText = Math.floor(GameState.resources.defense);
+            document.getElementById('res-insanity').innerText = `${Math.floor(GameState.resources.insanity)}%`;
+            document.getElementById('weather-display').innerText = `ATMOSFERA: ${GameState.currentWeather.replace('_', ' ')}`;
+            
+            // Valida o ataque sistêmico da horda
+            director.evaluateGlobalThreat(ecs, GameState);
+        });
+
+        // Lógica de Avanço Diário Através do Engine Ticks
+        setInterval(() => {
+            GameState.resources.day++;
+            document.getElementById('day-counter').innerText = `CICLO: DIA ${String(GameState.resources.day || 1).padStart(2, '0')}`;
+            if(Math.random() < 0.20) director.triggerCinematicEvent(GameState);
+        }, 8000);
+
+        window.World = { renderActiveCity: () => {} };
+
+        // Renderização Inicial do Menu de Construção Industrial
+        const menu = document.getElementById('build-menu');
+        const availableCatalog = [
+            { id: 'caldeira', name: 'Caldeira de Sangue', cost: '80 Cobre' },
+            { id: 'muralha', name: 'Muralha de Ossos', cost: '120 Cobre' }
+        ];
+        
+        availableCatalog.forEach(b => {
+            menu.innerHTML += `
+                <div class="p-2 border border-zinc-800 bg-black/60 mb-2 flex justify-between items-center">
+                    <div>
+                        <div class="text-xs text-zinc-300 font-bold">${b.name}</div>
+                        <div class="text-[9px] text-zinc-500 font-mono">${b.cost}</div>
+                    </div>
+                    <button class="p-1 border border-red-900/50 bg-red-950/20 text-[10px] text-red-500 hover:bg-red-900 hover:text-white transition-all uppercase tracking-widest">Sintetizar</button>
+                </div>
+            `;
         });
     </script>
 </body>
