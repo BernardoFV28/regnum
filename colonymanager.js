@@ -1,213 +1,168 @@
-// colonymanager.js
 
 export class ColonyManager {
     constructor() {
-        // Estado de Tempo e Atmosfera
-        this.day = 1;
-        this.weather = 'CALMARIA MORTA';
-        
-        // Estado Central e Psicológico
         this.resources = { 
-            name: "Núcleo Alfa",
-            biomass: 200, 
-            copper: 150, 
-            steam: 100,
-            maxSteam: 100, 
-            population: 30, 
-            defense: 40,
-            insanity: 0 // A métrica do desespero
+            biomass: 200,    // Representa os Mantimentos/Comida (food.png)
+            copper: 150,     // Representa a Madeira (wood.png)
+            steam: 100,      // Nível de Vapor/Calor contra o frio
+            population: 30,  // População atual
+            defense: 10      // Defesa total oferecida pelas Muralhas
         };
+        
+        this.day = 1;
 
-        // Catálogo de Construções Biopunk
+        // Catálogo de Construções atualizado com as suas imagens e nomes nativos
         this.buildings = [
-            { id: 'incubadora', name: 'Incubadora de Carne', count: 1, cost: { copper: 50 }, prod: 'biomass', rate: 5 },
-            { id: 'extrator', name: 'Extrator de Cobre', count: 1, cost: { biomass: 60 }, prod: 'copper', rate: 3 },
-            { id: 'caldeira', name: 'Caldeira de Sangue', count: 0, cost: { copper: 80, biomass: 40 }, prod: 'steam', rate: 8 },
-            { id: 'casulo', name: 'Casulo de Gestação', count: 0, cost: { copper: 120, biomass: 150 }, prod: 'population', rate: 1 },
-            { id: 'muralha', name: 'Muralha de Ossos', count: 0, cost: { copper: 100, biomass: 50 }, prod: 'defense', rate: 2 },
-            { id: 'turbina', name: 'Turbina de Sucata', count: 0, cost: { biomass: 30 }, prod: 'copper', rate: 1 },
-            { id: 'sintetizador', name: 'Sintetizador Celular', count: 0, cost: { copper: 250 }, prod: 'biomass', rate: 12 }
+            { id: 'house', name: 'Cabana', count: 1, cost: { copper: 50 }, prod: 'population', rate: 2, icon: 'house.png' },
+            { id: 'farm', name: 'Fazenda', count: 1, cost: { copper: 40 }, prod: 'biomass', rate: 6, icon: 'farm.png' },
+            { id: 'incubator', name: 'Incubadora', count: 0, cost: { copper: 100 }, prod: 'biomass', rate: 18, icon: 'food.png' },
+            { id: 'wall', name: 'Muralha', count: 1, cost: { copper: 60 }, prod: 'defense', rate: 15, icon: 'wall.png' }
         ];
         
         this.init();
     }
 
+    // --- GETTERS E SETTERS DE COMPATIBILIDADE PARA O CRISISSYSTEM ---
+    get name() { return "Feudo Brutal"; }
+    get defense() { return this.resources.defense; }
+    set defense(value) { this.resources.defense = value; }
+    get copper() { return this.resources.copper; }
+    set copper(value) { this.resources.copper = value; }
+    get biomass() { return this.resources.biomass; }
+    set biomass(value) { this.resources.biomass = value; }
+    get population() { return this.resources.population; }
+    set population(value) { this.resources.population = value; }
+
     init() {
-        // Inicia o ciclo vital: 1 tick = 2 segundos simulados
+        // Inicia o loop de sobrevivência (1 tick = 2 segundos)
         setInterval(() => this.simulationTick(), 2000);
-        this.renderCityGrid();
+        
+        // Configura os listeners de clique nos botões do index.html
+        this.setupInteractions();
         this.updateUI();
     }
 
-    advanceDay() {
-        this.day++;
-        
-        // 1. Sistema Procedural de Clima Extremo (Roleta Viciada)
-        const weathers = [
-            { name: 'CALMARIA MORTA', chance: 50 },
-            { name: 'NEVASCA CORTANTE', chance: 20 },
-            { name: 'CHUVA ÁCIDA', chance: 20 },
-            { name: 'ECLIPSE MECÂNICO', chance: 10 }
-        ];
-        
-        const rand = Math.random() * 100;
-        let sum = 0;
-        for (let w of weathers) {
-            sum += w.chance;
-            if (rand <= sum) {
-                this.weather = w.name;
-                break;
-            }
-        }
-        
-        // Log visual da mudança climática
-        let weatherColor = this.weather === 'CALMARIA MORTA' ? 'text-zinc-500' : 'text-amber-500';
-        Events.emit('COMBAT_LOG', { text: `DIA ${this.day}: A atmosfera mudou para <span class="${weatherColor} font-bold">${this.weather}</span>.` });
-
-        // 2. Acionador de Eventos Narrativos (25% de chance por dia)
-        if (Math.random() < 0.25) {
-            Events.emit('TRIGGER_NARRATIVE');
-        }
-
-        // 3. Atualização da Interface de Tempo
-        document.getElementById('day-counter').innerText = `DIA ${this.day.toString().padStart(2, '0')}`;
-        const daysLeft = 10 - (this.day % 10 === 0 ? 10 : this.day % 10);
-        document.getElementById('days-left').innerText = daysLeft;
+    setupInteractions() {
+        // Seleciona os botões de construção baseados no atributo data-building
+        document.querySelectorAll('.build-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const buildingId = btn.getAttribute('data-building');
+                if (buildingId) this.buildStructure(buildingId);
+            });
+        });
     }
 
     simulationTick() {
-        // 1. Dreno Térmico Baseado no Clima
-        let steamDrain = 6;
-        if (this.weather === 'NEVASCA CORTANTE') steamDrain = 14; // Dobro do frio
-        
-        // 2. Degradação Psicológica Passiva
-        if (this.weather === 'ECLIPSE MECÂNICO') this.resources.insanity += 2;
-        if (this.resources.biomass <= 10) this.resources.insanity += 1; // Fome contínua gera loucura
-        
-        this.resources.steam -= steamDrain;
-        this.resources.biomass -= Math.floor(this.resources.population * 0.2);
+        // 1. Frostpunk Core: Consumo passivo de Vapor pelo frio extremo
+        this.resources.steam = Math.max(0, this.resources.steam - 4);
 
-        // 3. Produção de Recursos (Afetada pelo Clima)
-        let productionMultiplier = 1.0;
-        if (this.weather === 'CHUVA ÁCIDA') productionMultiplier = 0.5; // Trabalhadores se escondem
+        // 2. Biopunk Core: População consome Mantimentos (Biomassa) para não morrer
+        this.resources.biomass = Math.max(0, this.resources.biomass - Math.floor(this.resources.population * 0.2));
 
-        this.buildings.forEach(b => {
-            // A Caldeira e Muralha operam 100% idependente da chuva, o resto cai pela metade
-            let currentMult = (b.id === 'caldeira' || b.id === 'muralha') ? 1.0 : productionMultiplier;
-            
-            if (this.resources.steam > 10) { 
-                this.resources[b.prod] += Math.floor((b.rate * b.count) * currentMult);
-            }
-        });
+        // 3. Tarefa Ativa: Produção passiva de Madeira (Copper) feita pelos colonos livres
+        this.resources.copper += Math.floor(this.resources.population * 0.1) + 2;
 
-        // 4. Correção e Travas de Limites
-        if (this.resources.steam > this.resources.maxSteam) this.resources.steam = this.resources.maxSteam;
-        if (this.resources.insanity > 100) this.resources.insanity = 100;
-        if (this.resources.insanity < 0) this.resources.insanity = 0;
+        // 4. Produção dos Edifícios de Comida (Só produzem se houver um mínimo de calor/vapor)
+        if (this.resources.steam > 10) {
+            this.buildings.forEach(b => {
+                if (b.prod === 'biomass') {
+                    this.resources.biomass += b.rate * b.count;
+                }
+            });
+        }
 
-        // 5. Verificações de Crise Letal
+        // 5. Estados de Crise Críticos por falta de recursos
         if (this.resources.steam <= 0) {
-            this.resources.steam = 0;
-            this.resources.population -= 2; 
-            Events.emit('COMBAT_LOG', { text: "CRÍTICO: O frio penetra a carne. -2 População.", type: 'critical' });
-            window.Events.emit('SCREEN_SHAKE', { intensity: 'light' });
+            this.resources.population = Math.max(0, this.resources.population - 2);
+            Events.emit('COMBAT_LOG', { text: "🚨 CONGELAMENTO: Setores sem vapor! População a sucumbir.", type: 'critical' });
         }
 
         if (this.resources.biomass <= 0) {
-            this.resources.biomass = 0;
-            this.resources.population -= 1; 
+            this.resources.population = Math.max(0, this.resources.population - 1);
+            Events.emit('COMBAT_LOG', { text: "💀 FOME: Escassez crítica de mantimentos no feudo.", type: 'critical' });
         }
-
-        // 6. O Evento de Loucura Máxima
-        if (this.resources.insanity >= 80 && Math.random() < 0.15) {
-            const deaths = Math.floor(Math.random() * 4) + 1;
-            this.resources.population -= deaths;
-            Events.emit('COMBAT_LOG', { text: `[ DELÍRIO ] ${deaths} cidadãos abraçaram as engrenagens e foram triturados.`, type: 'critical' });
-            this.resources.insanity -= 25; // O derramamento de sangue acalma a colônia temporariamente
-            window.Events.emit('SCREEN_SHAKE', { intensity: 'heavy' }); // Punição tátil
-        }
-
-        // Garante números positivos
-        this.resources.biomass = Math.max(0, this.resources.biomass);
-        this.resources.population = Math.max(0, this.resources.population);
 
         this.updateUI();
     }
 
     buildStructure(buildingId) {
         const b = this.buildings.find(item => item.id === buildingId);
-        
-        let canAfford = true;
-        for (let res in b.cost) {
-            if (this.resources[res] < b.cost[res]) {
-                canAfford = false;
-                break;
-            }
-        }
+        if (!b) return;
 
-        if (canAfford) {
-            for (let res in b.cost) {
-                this.resources[res] -= b.cost[res];
+        // Todas as construções usam Madeira (copper) como recurso de engenharia
+        if (this.resources.copper >= b.cost.copper) {
+            this.resources.copper -= b.cost.copper;
+            b.count++;
+            
+            // Aplica os efeitos imediatos de cada construção
+            if (b.id === 'wall') {
+                this.resources.defense += b.rate;
+                Events.emit('COMBAT_LOG', { text: `🧱 Muralha reforçada! Proteção aumentada em +${b.rate}.` });
+            } else if (b.id === 'house') {
+                this.resources.population += b.rate; // Novas cabanas abrigam e atraem colonos
+                Events.emit('COMBAT_LOG', { text: `🛖 Nova Cabana erguida! +${b.rate} Colonos abrigados.` });
+            } else if (b.id === 'incubator') {
+                Events.emit('COMBAT_LOG', { text: `🧪 Incubadora Ativada! Produção biológica de alta eficiência iniciada.` });
+            } else {
+                Events.emit('COMBAT_LOG', { text: `🛠️ Estrutura expandida: +1 ${b.name} (Total: ${b.count})` });
             }
             
-            b.count++;
-            Events.emit('COMBAT_LOG', { text: `Sintetização concluída: +1 ${b.name}` });
-            Events.emit('STRUCTURE_BUILT', { id: buildingId }); // Comunica o Canvas 2D
-            
-            this.renderCityGrid();
             this.updateUI();
         } else {
-            Events.emit('COMBAT_LOG', { text: "Recursos orgânicos ou metálicos insuficientes para a mutação.", type: 'critical' });
+            Events.emit('COMBAT_LOG', { text: `❌ Madeira insuficiente para construir ${b.name}! Requer ${b.cost.copper} unidades.` });
         }
     }
 
-    renderCityGrid() {
-        const grid = document.getElementById('city-grid');
-        grid.innerHTML = '';
+    advanceDay() {
+        this.day++;
         
-        const trans = { copper: 'Cobre', biomass: 'Biomassa', steam: 'Vapor', population: 'Pessoas', defense: 'Defesa' };
-
-        this.buildings.forEach(b => {
-            const costString = Object.entries(b.cost)
-                                     .map(([res, val]) => `${val} ${trans[res]}`)
-                                     .join(' + ');
-
-            grid.innerHTML += `
-                <div class="panel p-3 border border-zinc-800 flex justify-between items-center bg-black/40 hover:bg-zinc-900/50 transition-colors">
-                    <div>
-                        <p class="text-zinc-200 font-bold text-sm tracking-wide">${b.name} <span class="text-amber-500">(x${b.count})</span></p>
-                        <p class="text-[10px] text-zinc-500 font-mono mt-1">Gera: +${b.rate * b.count} ${trans[b.prod]}/tick</p>
-                    </div>
-                    <button onclick="window.Colony.buildStructure('${b.id}')" class="text-[10px] font-bold p-2 border border-amber-600/30 bg-amber-950/30 hover:bg-amber-900/60 hover:border-amber-500 text-amber-500 uppercase tracking-widest transition-all">
-                        Cultivar [ ${costString} ]
-                    </button>
-                </div>
-            `;
-        });
+        // Comunica o avanço do dia para o CrisisSystem.js processar as invasões nos dias múltiplos de 10
+        Events.emit('DAY_ADVANCED', { day: this.day, activeCity: this });
+        
+        this.updateUI();
     }
 
     updateUI() {
-        document.getElementById('res-biomass').innerText = this.resources.biomass;
-        document.getElementById('res-copper').innerText = this.resources.copper;
-        document.getElementById('res-population').innerText = this.resources.population;
-        document.getElementById('colony-steam').innerText = `${this.resources.steam} / ${this.resources.maxSteam}`;
-        
-        const meter = document.getElementById('steam-meter');
-        meter.style.width = `${(this.resources.steam / this.resources.maxSteam) * 100}%`;
-        
-        const tempText = document.getElementById('colony-temp');
-        if (this.resources.steam < 30) {
-            tempText.innerText = "CONGELAMENTO CRÍTICO";
-            tempText.className = "text-[10px] text-red-500 font-bold animate-pulse tracking-widest";
-        } else {
-            tempText.innerText = "ESTÁVEL";
-            tempText.className = "text-[10px] text-orange-500 font-bold tracking-widest";
-        }
+        // Atualiza os contadores principais lidando com IDs antigos e novos de forma segura
+        const biomassEl = document.getElementById('res-biomass') || document.getElementById('res-food');
+        if (biomassEl) biomassEl.innerText = Math.floor(this.resources.biomass);
 
-        // Lógica de injeção dinâmica de alerta de Insanidade no log (caso o HUD não suporte a barra de sanidade ainda)
-        if (this.resources.insanity > 75) {
-            tempText.innerText = "RISCO DE MOTIM";
-            tempText.className = "text-[10px] text-purple-500 font-bold animate-pulse tracking-widest";
+        const copperEl = document.getElementById('res-copper') || document.getElementById('res-wood');
+        if (copperEl) copperEl.innerText = Math.floor(this.resources.copper);
+
+        const popEl = document.getElementById('res-population');
+        if (popEl) popEl.innerText = this.resources.population;
+
+        const steamEl = document.getElementById('colony-steam');
+        if (steamEl) steamEl.innerText = `${this.resources.steam} / 100`;
+
+        // Preenche a barra visual de calor (se existir)
+        const meter = document.getElementById('steam-meter') || document.getElementById('bar-warmth');
+        if (meter) meter.style.width = `${this.resources.steam}%`;
+        
+        // Atualiza os painéis informativos de passagem do tempo
+        const dayCounter = document.getElementById('day-counter') || document.getElementById('time-day');
+        if (dayCounter) {
+            dayCounter.innerText = `DIA ${this.day.toString().padStart(2, '0')}`;
+        }
+        
+        // Calcula e exibe quantos dias faltam para a próxima horda (ciclos de 10 dias)
+        const daysLeftEl = document.getElementById('days-left');
+        if (daysLeftEl) {
+            const daysLeft = 10 - (this.day % 10 === 0 ? 10 : this.day % 10);
+            daysLeftEl.innerText = daysLeft;
+        }
+        
+        // Atualização visual do painel de temperatura
+        const tempText = document.getElementById('colony-temp');
+        if (tempText) {
+            if (this.resources.steam < 30) {
+                tempText.innerText = "🚨 CONGELAMENTO";
+                tempText.className = "text-red-600 font-bold animate-pulse";
+            } else {
+                tempText.innerText = "🔥 ESTÁVEL";
+                tempText.className = "text-orange-500 font-bold";
+            }
         }
     }
 }
