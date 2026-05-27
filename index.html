@@ -1,678 +1,364 @@
 <!DOCTYPE html>
-<html lang="pt-PT">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FEUDO BRUTAL:]</title>
+    <title>Feudo Brutal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #020202; font-family: 'Courier New', Courier, monospace; overflow: hidden; }
-        .crt::after {
-            content: " "; display: block; position: absolute; inset: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%);
-            background-size: 100% 4px; pointer-events: none; z-index: 999;
+        /* Estética Dark / Industrial */
+        body {
+            background-color: #09090b; 
+            color: #d4d4d8; 
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+            overflow: hidden; 
         }
-        .vignette { box-shadow: inset 0 0 150px rgba(0,0,0,0.95); }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: #000; }
-        ::-webkit-scrollbar-thumb { background: #222; }
+
+        .panel-dark-wood {
+            background-color: #121214;
+            border-top: 2px solid #27272a;
+        }
+
+        /* Botões Metálicos Interativos - Caminhos ajustados direto para assets/ */
+        .action-iron {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background-color: #18181b;
+            border: 1px solid #3f3f46;
+            color: #a1a1aa;
+            text-transform: uppercase;
+            font-size: 0.70rem;
+            font-weight: bold;
+            letter-spacing: 0.05em;
+            transition: all 0.1s ease-in-out;
+            width: 100%;
+            min-height: 80px;
+        }
+
+        .action-iron:hover {
+            background-image: url('assets/iron_button_hover.png');
+            background-size: cover;
+            background-position: center;
+            color: #f4f4f5;
+            border-color: #71717a;
+            transform: translateY(-2px);
+        }
+
+        .action-iron:active {
+            background-image: url('assets/iron_button_active.png');
+            background-size: cover;
+            background-position: center;
+            transform: translateY(1px);
+        }
+
+        /* Controle Rígido do Tamanho das Imagens */
+        .icon-large { 
+            width: 32px; 
+            height: 32px; 
+            image-rendering: pixelated; 
+            object-fit: contain;
+        }
+        
+        .icon-small { 
+            width: 18px; 
+            height: 18px; 
+            image-rendering: pixelated; 
+            object-fit: contain;
+        }
     </style>
 </head>
-<body class="w-screen h-screen crt relative text-neutral-400 select-none">
+<body class="h-screen flex flex-col justify-between selection:bg-red-900 selection:text-white">
 
-    <div id="splash-screen" class="absolute inset-0 bg-black z-50 flex flex-col justify-center items-center cursor-pointer border-4 border-red-950/30 m-4">
-        <h1 class="text-red-600 font-bold text-2xl tracking-[0.3em] animate-pulse mb-2">FEUDO BRUTAL</h1>
-        <p class="text-zinc-600 text-xs tracking-widest uppercase">CLIQUE PARA INICIAR O PROTOCOLO BIOMECÂNICO AAA</p>
-    </div>
+    <header class="bg-zinc-900/80 border-b border-zinc-800 p-2 shadow-lg backdrop-blur-sm z-10">
+        <div class="max-w-6xl mx-auto flex justify-between items-center text-sm">
+            
+            <div class="flex gap-4 md:gap-6">
+                <div class="flex items-center gap-2 bg-black/50 px-3 py-1 rounded border border-zinc-800">
+                    <img src="assets/food.png" alt="Comida" class="icon-small">
+                    <span id="res-food" class="font-bold text-amber-500">200</span>
+                </div>
+                
+                <div class="flex items-center gap-2 bg-black/50 px-3 py-1 rounded border border-zinc-800">
+                    <img src="assets/wood.png" alt="Madeira" class="icon-small">
+                    <span id="res-wood" class="font-bold text-orange-400">150</span>
+                </div>
 
-    <canvas id="primary-engine-canvas" class="absolute inset-0 w-full h-full z-0 vignette"></canvas>
-
-    <div class="absolute inset-0 z-10 pointer-events-none flex flex-col justify-between p-6">
-        
-        <div class="w-full bg-black/90 border border-zinc-900 p-4 flex justify-between items-center pointer-events-auto shadow-2xl">
-            <div class="flex gap-10 text-xs">
-                <div><span class="text-zinc-600 block tracking-widest">🥩 BIOMASSA CORRUPTA</span><span id="ui-biomass" class="text-emerald-500 font-bold text-lg">250</span></div>
-                <div><span class="text-zinc-600 block tracking-widest">⚙️ COBRE ALQUÍMICO</span><span id="ui-copper" class="text-amber-600 font-bold text-lg">100</span></div>
-                <div><span class="text-zinc-600 block tracking-widest">💨 PRESSÃO DE VAPOR</span><span id="ui-steam" class="text-orange-500 font-bold text-lg">100%</span></div>
-                <div><span class="text-zinc-600 block tracking-widest">🧠 MEDO COLETIVO</span><span id="ui-fear" class="text-purple-500 font-bold text-lg">0%</span></div>
-                <div><span class="text-zinc-600 block tracking-widest">👥 POPULAÇÃO ALVO</span><span id="ui-pop" class="text-zinc-400 font-bold text-lg">40</span></div>
-            </div>
-            <div class="text-right">
-                <div id="ui-weather" class="text-red-500 font-bold text-xs tracking-[0.2em] uppercase">ATMOSFERA: ESTÁVEL</div>
-                <div id="ui-crisis-timer" class="text-[9px] text-zinc-600 tracking-wider mt-1">SISTEMA NOMINAL</div>
-            </div>
-        </div>
-
-        <div class="self-center bg-black/40 border border-zinc-900/40 p-2 rounded text-[10px] tracking-widest text-zinc-600 text-center uppercase">
-            Clique no mapa para enviar Drones Biológicos (Navegação em Tempo Real)
-        </div>
-
-        <div class="w-full flex justify-between items-end pointer-events-auto gap-6">
-            <div class="w-1/2 bg-black/95 border border-zinc-900 p-4 h-40 flex flex-col shadow-2xl">
-                <div class="text-[10px] text-zinc-500 border-b border-zinc-900 pb-1 mb-2 tracking-widest font-bold uppercase">Transmissões Sinápticas e Eventos Históricos</div>
-                <div id="terminal-log" class="text-[10px] flex-grow overflow-y-auto flex flex-col gap-1 text-zinc-400 font-mono">
-                    <div class="text-zinc-600">> Núcleo de Simulação Inicializado com Sucesso.</div>
+                <div class="flex items-center gap-2 bg-black/50 px-3 py-1 rounded border border-zinc-800">
+                    <span class="text-zinc-500">👥 Pop:</span>
+                    <span id="res-population" class="font-bold text-zinc-100">30</span>
                 </div>
             </div>
-<footer class="bottom-bar panel-dark-wood">
-    <button class="build-btn action-iron" data-building="house">
-        <img src="assets/house.png" alt="Casa" class="icon-large">
-        <span>Cabana</span>
-    </button>
-    
-    <button class="build-btn action-iron" data-building="farm">
-        <img src="assets/farm.png" alt="Fazenda" class="icon-large">
-        <span>Fazenda</span>
-    </button>
 
-    <button class="build-btn action-iron" data-building="incubator">
-        <img src="assets/food.png" alt="Incubadora" class="icon-large">
-        <span>Incubadora</span>
-    </button>
+            <div class="flex items-center gap-6">
+                <div class="text-right">
+                    <div id="day-counter" class="text-zinc-300 font-bold tracking-widest">DIA 01</div>
+                    <div class="text-[10px] text-red-500">Cerco em: <span id="days-left" class="font-bold">10</span> dias</div>
+                </div>
 
-    <button class="build-btn action-iron" data-building="wall">
-        <img src="assets/wall.png" alt="Muralha" class="icon-large">
-        <span>Muralha</span>
-    </button>
-</footer>
-    </div>
-</div>
+                <div class="w-24 md:w-32 bg-black/50 p-1 rounded border border-zinc-800">
+                    <div class="flex justify-between text-[10px] mb-1">
+                        <span id="colony-temp">🔥 ESTÁVEL</span>
+                        <span id="colony-steam">100%</span>
+                    </div>
+                    <div class="w-full bg-zinc-900 h-2 rounded overflow-hidden">
+                        <div id="steam-meter" class="bg-orange-600 h-full w-full transition-all duration-500"></div>
+                    </div>
+                </div>
+            </div>
 
-    <script type="module">
-        // ==========================================
-        // 1. MÓDULO DE MEMÓRIA E ARQUÉTIPOS (ECS CORE)
-        // ==========================================
-        const ComponentMask = {
-            Transform: 1 << 0,
-            Renderable: 1 << 1,
-            Infrastructure: 1 << 2,
-            SocioPsychology: 1 << 3,
-            EconomicNode: 1 << 4,
-            InfectionVector: 1 << 5,
-            Pathfollower: 1 << 6,
-            Vitals: 1 << 7
+        </div>
+    </header>
+
+    <main class="flex-1 relative flex items-center justify-center p-4">
+        
+        <div id="combat-overlay" class="hidden absolute top-10 left-1/2 -translate-x-1/2 bg-red-950/90 border-2 border-red-600 text-red-200 px-8 py-3 shadow-[0_0_30px_rgba(220,38,38,0.5)] z-50 text-center">
+            <h2 class="text-xl font-bold tracking-widest animate-pulse">⚔️ A HORDA ATACOU ⚔️</h2>
+            <p class="text-xs mt-1 text-red-400">Defesas sob pressão máxima!</p>
+        </div>
+
+        <div class="absolute bottom-4 left-4 w-80 h-48 bg-black/80 border border-zinc-800 p-3 overflow-y-auto flex flex-col-reverse text-xs text-zinc-400" id="combat-log">
+            <div><span class="text-zinc-600">SISTEMA:</span> Feudo Brutal inicializado...</div>
+        </div>
+
+    </main>
+
+    <footer class="panel-dark-wood p-3 z-10">
+        <div class="max-w-6xl mx-auto grid grid-cols-4 md:grid-cols-8 gap-2">
+            
+            <button class="build-btn action-iron" data-building="house">
+                <img src="assets/house.png" alt="Cabana" class="icon-large">
+                <span>Cabana</span>
+                <span class="text-[9px] text-orange-400 font-normal">50 Mad.</span>
+            </button>
+            
+            <button class="build-btn action-iron" data-building="farm">
+                <img src="assets/farm.png" alt="Fazenda" class="icon-large">
+                <span>Fazenda</span>
+                <span class="text-[9px] text-orange-400 font-normal">40 Mad.</span>
+            </button>
+
+            <button class="build-btn action-iron" data-building="incubator">
+                <img src="assets/food.png" alt="Incubadora" class="icon-large">
+                <span>Incubadora</span>
+                <span class="text-[9px] text-orange-400 font-normal">100 Mad.</span>
+            </button>
+
+            <button class="build-btn action-iron" data-building="extractor">
+                <img src="assets/wood.png" alt="Lenhador" class="icon-large">
+                <span>Lenhador</span>
+                <span class="text-[9px] text-amber-500 font-normal">30 Com.</span>
+            </button>
+
+            <button class="build-btn action-iron" data-building="boiler">
+                <span>Caldeira</span>
+                <span class="text-[9px] text-orange-400 font-normal">80 Mad.</span>
+            </button>
+
+            <button class="build-btn action-iron" data-building="lab">
+                <span>Laboratório</span>
+                <span class="text-[9px] text-orange-400 font-normal">120 Mad.</span>
+            </button>
+
+            <button class="build-btn action-iron" data-building="wall">
+                <img src="assets/wall.png" alt="Muralha" class="icon-large">
+                <span>Muralha</span>
+                <span class="text-[9px] text-orange-400 font-normal">60 Mad.</span>
+            </button>
+
+            <button class="build-btn action-iron" data-building="tower">
+                <span>Torre Def.</span>
+                <span class="text-[9px] text-amber-500 font-normal">80 Com.</span>
+            </button>
+
+        </div>
+    </footer>
+
+    <script>
+        // Sistema de Eventos
+        window.Events = {
+            listeners: {},
+            on: function(event, callback) {
+                if (!this.listeners[event]) this.listeners[event] = [];
+                this.listeners[event].push(callback);
+            },
+            emit: function(event, data) {
+                if (this.listeners[event]) {
+                    this.listeners[event].forEach(callback => callback(data));
+                }
+            }
         };
 
-        class Chunk {
-            constructor(mask, capacity = 2000) {
-                this.mask = mask;
-                this.capacity = capacity;
-                this.size = 0;
-                this.entities = new Uint32Array(capacity);
-                this.storage = {};
-                this.initStorage();
-            }
+        // Escutador do Log
+        Events.on('COMBAT_LOG', (data) => {
+            const logBox = document.getElementById('combat-log');
+            if (!logBox) return;
+            
+            let colorClass = 'text-zinc-300';
+            if (data.type === 'critical') colorClass = 'text-red-500 font-bold';
+            if (data.type === 'warning') colorClass = 'text-amber-500';
 
-            initStorage() {
-                if (this.mask & ComponentMask.Transform) {
-                    this.storage.Transform = { x: new Float32Array(this.capacity), y: new Float32Array(this.capacity), targetX: new Float32Array(this.capacity), targetY: new Float32Array(this.capacity) };
-                }
-                if (this.mask & ComponentMask.Renderable) {
-                    this.storage.Renderable = { spriteId: new Uint8Array(this.capacity), pulseOffset: new Float32Array(this.capacity), r: new Uint8Array(this.capacity), g: new Uint8Array(this.capacity), b: new Uint8Array(this.capacity) };
-                }
-                if (this.mask & ComponentMask.Infrastructure) {
-                    this.storage.Infrastructure = { tier: new Uint8Array(this.capacity), temperature: new Float32Array(this.capacity), integrity: new Float32Array(this.capacity) };
-                }
-                if (this.mask & ComponentMask.SocioPsychology) {
-                    this.storage.SocioPsychology = { sanity: new Float32Array(this.capacity), fanaticism: new Float32Array(this.capacity), radicalization: new Float32Array(this.capacity) };
-                }
-                if (this.mask & ComponentMask.EconomicNode) {
-                    this.storage.EconomicNode = { prodRate: new Float32Array(this.capacity), efficiency: new Float32Array(this.capacity) };
-                }
-                if (this.mask & ComponentMask.InfectionVector) {
-                    this.storage.InfectionVector = { rotLevel: new Float32Array(this.capacity), sporeEmission: new Float32Array(this.capacity) };
-                }
-                if (this.mask & ComponentMask.Pathfollower) {
-                    this.storage.Pathfollower = { speed: new Float32Array(this.capacity) };
-                }
-                if (this.mask & ComponentMask.Vitals) {
-                    this.storage.Vitals = { hunger: new Float32Array(this.capacity), infection: new Float32Array(this.capacity) };
-                }
-            }
+            const entry = document.createElement('div');
+            entry.className = `mb-1 ${colorClass}`;
+            entry.innerHTML = `> ${data.text}`;
+            
+            logBox.prepend(entry);
+            if (logBox.children.length > 20) logBox.removeChild(logBox.lastChild);
+        });
 
-            addEntity(entityId, data) {
-                if (this.size >= this.capacity) return false;
-                const idx = this.size;
-                this.entities[idx] = entityId;
-
-                for (const compName in data) {
-                    if (this.storage[compName]) {
-                        for (const prop in data[compName]) {
-                            this.storage[compName][prop][idx] = data[compName][prop];
-                        }
-                    }
-                }
-                this.size++;
-                return true;
-            }
-
-            swapAndRemove(idx) {
-                const lastIdx = this.size - 1;
-                this.entities[idx] = this.entities[lastIdx];
-                for (const compName in this.storage) {
-                    for (const prop in this.storage[compName]) {
-                        this.storage[compName][prop][idx] = this.storage[compName][prop][lastIdx];
-                    }
-                }
-                this.size--;
-            }
-        }
-
-        class EngineECS {
+        class ColonyManager {
             constructor() {
-                this.entityMasks = new Uint32Array(10000);
-                this.entityChunkIndex = new Uint32Array(10000);
-                this.entityChunkRef = new Array(10000);
-                this.freeIds = [];
-                this.nextId = 1;
-                this.chunks = [];
+                this.resources = { 
+                    biomass: 200,    
+                    copper: 150,     
+                    steam: 100,      
+                    population: 30,  
+                    defense: 10      
+                };
+                
+                this.day = 1;
+                this.dayTimer = 0;
+
+                this.buildings = [
+                    { id: 'house', name: 'Cabana', count: 1, costType: 'copper', costValue: 50, rate: 2 },
+                    { id: 'farm', name: 'Fazenda', count: 1, costType: 'copper', costValue: 40, rate: 6 },
+                    { id: 'incubator', name: 'Incubadora', count: 0, costType: 'copper', costValue: 100, rate: 18 },
+                    { id: 'extractor', name: 'Lenhador', count: 0, costType: 'biomass', costValue: 30, rate: 10 },
+                    { id: 'boiler', name: 'Caldeira', count: 1, costType: 'copper', costValue: 80, rate: 8 },
+                    { id: 'lab', name: 'Laboratório', count: 0, costType: 'copper', costValue: 120, rate: 15 },
+                    { id: 'wall', name: 'Muralha', count: 1, costType: 'copper', costValue: 60, rate: 20 },
+                    { id: 'tower', name: 'Torre Def.', count: 0, costType: 'biomass', costValue: 80, rate: 15 }
+                ];
+                
+                this.init();
             }
 
-            createEntity(mask, data) {
-                const id = this.freeIds.length > 0 ? this.freeIds.pop() : this.nextId++;
-                this.entityMasks[id] = mask;
+            get name() { return "Feudo Brutal"; }
+            get defense() { return this.resources.defense; }
+            set defense(v) { this.resources.defense = v; }
+            get copper() { return this.resources.copper; }
+            set copper(v) { this.resources.copper = v; }
+            get biomass() { return this.resources.biomass; }
+            set biomass(v) { this.resources.biomass = v; }
+            get population() { return this.resources.population; }
+            set population(v) { this.resources.population = v; }
 
-                let chunk = this.chunks.find(c => c.mask === mask && c.size < c.capacity);
-                if (!chunk) {
-                    chunk = new Chunk(mask);
-                    this.chunks.push(chunk);
-                }
-
-                chunk.addEntity(id, data);
-                this.entityChunkRef[id] = chunk;
-                this.entityChunkIndex[id] = chunk.size - 1;
-                return id;
-            }
-        }
-
-        // ==========================================
-        // 2. TIMESTEP DETERMINÍSTICO (GAME LOOP)
-        // ==========================================
-        class DeterministicGameLoop {
-            constructor(tickRate = 30) {
-                this.fixedDelta = 1000 / tickRate;
-                this.accumulatedTime = 0;
-                this.lastFrameTime = 0;
-                this.isRunning = false;
-            }
-
-            start(updateCb, renderCb) {
-                this.update = updateCb;
-                this.render = renderCb;
-                this.isRunning = true;
-                this.lastFrameTime = performance.now();
-                requestAnimationFrame((t) => this.run(t));
-            }
-
-            run(currentTime) {
-                if (!this.isRunning) return;
-                let frameTime = currentTime - this.lastFrameTime;
-                if (frameTime > 250) frameTime = 250;
-                this.lastFrameTime = currentTime;
-                this.accumulatedTime += frameTime;
-
-                while (this.accumulatedTime >= this.fixedDelta) {
-                    this.update(this.fixedDelta / 1000);
-                    this.accumulatedTime -= this.fixedDelta;
-                }
-                this.render(this.accumulatedTime / this.fixedDelta);
-                requestAnimationFrame((t) => this.run(t));
-            }
-        }
-
-        // ==========================================
-        // 3. EVENT BUS INTERNO
-        // ==========================================
-        class InternalBus {
-            constructor() { this.m = new Map(); }
-            on(e, c) { if(!this.m.has(e)) this.m.set(e,[]); this.m.get(e).push(c); }
-            emit(e, d) { if(this.m.has(e)) this.m.get(e).forEach(c => c(d)); }
-        }
-        window.Events = new InternalBus();
-
-        // ==========================================
-        // 4. DIRETOR DE CRISES E SÍNTESE DE ÁUDIO
-        // ==========================================
-        class BiopunkAudioEngine {
-            constructor() { this.ctx = null; }
             init() {
-                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-                this.drone = this.ctx.createOscillator();
-                let filter = this.ctx.createBiquadFilter();
-                this.gain = this.ctx.createGain();
+                setInterval(() => this.simulationTick(), 2000);
                 
-                this.drone.type = 'sawtooth';
-                this.drone.frequency.value = 50; 
-                filter.type = 'lowpass';
-                filter.frequency.value = 140;
-                this.gain.gain.value = 0.05;
-
-                this.drone.connect(filter);
-                filter.connect(this.gain);
-                this.gain.connect(this.ctx.destination);
-                this.drone.start();
-            }
-            playClick() {
-                if(!this.ctx) return;
-                let osc = this.ctx.createOscillator();
-                let g = this.ctx.createGain();
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(150, this.ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(10, this.ctx.currentTime + 0.1);
-                g.gain.setValueAtTime(0.2, this.ctx.currentTime);
-                g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.09);
-                osc.connect(g); g.connect(this.ctx.destination);
-                osc.start(); osc.stop(this.ctx.currentTime + 0.1);
-            }
-        }
-
-        // ==========================================
-        // 5. IMPLEMENTAÇÃO INTEGRADA DOS 14 SISTEMAS AAA
-        // ==========================================
-        class SystemsPipeline {
-            constructor(audio) {
-                this.audio = audio;
-                this.grid = new Uint8Array(100 * 100);
-            }
-
-            update(ecs, dt, state) {
-                // Execução encadeada e paralela no buffer contíguo
-                this.WeatherSystem(state, dt);
-                this.HeatSystem(ecs, state, dt);
-                this.InfectionSystem(ecs, state, dt);
-                this.EconomySystem(ecs, state, dt);
-                this.PopulationSystem(ecs, state, dt);
-                this.FearSystem(state, dt);
-                this.RitualSystem(state, dt);
-                this.PathfindingSystem(ecs, dt);
-                this.AIWarSystem(ecs, state, dt);
-                this.ConstructionSystem(ecs, dt);
-                this.CrisisSystem(state, dt);
-                this.SocialSimulationSystem(ecs, state, dt);
-                this.AnimationSystem(ecs, dt);
-                this.AudioSystem(state);
-            }
-
-            WeatherSystem(state, dt) {
-                state.weatherTimer += dt;
-                if (state.weatherTimer > 25) {
-                    const climates = ['CALMARIA_MORTA', 'NEVASCA_CORTANTE', 'TEMPESTADE_DE_CARNE', 'ECLIPSE_MECANICO'];
-                    state.weather = climates[Math.floor(Math.random() * climates.length)];
-                    state.weatherTimer = 0;
-                    window.Events.emit('HUD_FLASH', { text: `ALTERAÇÃO ATMOSFÉRICA CRÍTICA: ${state.weather}`, color: '#ef4444' });
-                }
-            }
-
-            HeatSystem(ecs, state, dt) {
-                let loss = state.weather === 'NEVASCA_CORTANTE' ? 9.0 : 3.0;
-                state.steamPressure = Math.max(0, state.steamPressure - (loss * dt));
-                ecs.chunks.forEach(c => {
-                    if (c.mask & ComponentMask.Infrastructure) {
-                        for (let i = 0; i < c.size; i++) {
-                            c.storage.Infrastructure.temperature[i] = state.steamPressure > 30 ? 38.5 : -10.2;
-                        }
-                    }
-                });
-            }
-
-            InfectionSystem(ecs, state, dt) {
-                let mult = state.weather === 'TEMPESTADE_DE_CARNE' ? 3.0 : 1.0;
-                ecs.chunks.forEach(c => {
-                    if (c.mask & ComponentMask.InfectionVector) {
-                        for (let i = 0; i < c.size; i++) {
-                            c.storage.InfectionVector.rotLevel[i] = Math.min(100, c.storage.InfectionVector.rotLevel[i] + (1.2 * mult * dt));
-                        }
-                    }
-                });
-            }
-
-            EconomySystem(ecs, state, dt) {
-                ecs.chunks.forEach(c => {
-                    if ((c.mask & ComponentMask.EconomicNode) && (c.mask & ComponentMask.Infrastructure)) {
-                        for (let i = 0; i < c.size; i++) {
-                            let eff = c.storage.Infrastructure.temperature[i] > 0 ? 1.0 : 0.2;
-                            c.storage.EconomicNode.efficiency[i] = eff;
-                            state.resources.copper += c.storage.EconomicNode.prodRate[i] * eff * dt;
-                        }
-                    }
-                });
-                // Autoprodução passiva das incubadoras mapeadas
-                ecs.chunks.forEach(c => {
-                    if ((c.mask & ComponentMask.InfectionVector) && !(c.mask & ComponentMask.Pathfollower)) {
-                        state.resources.biomass += 2.0 * c.size * dt;
-                    }
-                });
-            }
-
-            PopulationSystem(ecs, state, dt) {
-                let usage = state.resources.population * 0.4 * dt;
-                if (state.resources.biomass > usage) {
-                    state.resources.biomass -= usage;
-                } else {
-                    state.resources.biomass = 0;
-                    state.resources.population = Math.max(10, state.resources.population - (2 * dt));
-                }
-            }
-
-            FearSystem(state, dt) {
-                let fearGain = state.weather === 'ECLIPSE_MECANICO' ? 6.0 : 1.0;
-                state.collectiveFear = Math.min(100, state.collectiveFear + (fearGain * dt));
-            }
-
-            RitualSystem(state, dt) {
-                if (state.collectiveFear > 85 && state.resources.biomass > 60) {
-                    state.resources.biomass -= 50;
-                    state.collectiveFear -= 40;
-                    window.Events.emit('COMBAT_LOG', { text: "RITUAL: Carne sacrificada para apaziguar a caldeira principal." });
-                }
-            }
-
-            PathfindingSystem(ecs, dt) {
-                ecs.chunks.forEach(c => {
-                    if ((c.mask & ComponentMask.Transform) && (c.mask & ComponentMask.Pathfollower)) {
-                        const t = c.storage.Transform;
-                        const p = c.storage.Pathfollower;
-                        for (let i = 0; i < c.size; i++) {
-                            let dx = t.targetX[i] - t.x[i];
-                            let dy = t.targetY[i] - t.y[i];
-                            let dst = Math.sqrt(dx*dx + dy*dy);
-                            if (dst > 2) {
-                                t.x[i] += (dx / dst) * p.speed[i] * dt;
-                                t.y[i] += (dy / dst) * p.speed[i] * dt;
-                            } else if (Math.random() < 0.02) {
-                                // Alvo aleatório se chegar ao destino (Comportamento Emergente de Patrulha)
-                                t.targetX[i] = Math.random() * window.innerWidth;
-                                t.targetY[i] = Math.random() * window.innerHeight;
-                            }
-                        }
-                    }
-                });
-            }
-
-            AIWarSystem(ecs, state, dt) {
-                state.siegeTimer += dt;
-                if (state.siegeTimer >= 40) {
-                    state.siegeTimer = 0;
-                    state.collectiveFear = Math.min(100, state.collectiveFear + 25);
-                    window.Events.emit('HUD_FLASH', { text: "ALERTA DE INVASÃO: Aberrações detetadas no quadrante externo!", color: '#a855f7' });
-                    // Spawn de Invasores no buffer contíguo
-                    for(let k=0; k<5; k++) {
-                        ecs.createEntity(ComponentMask.Transform | ComponentMask.Renderable | ComponentMask.Pathfollower, {
-                            Transform: { x: Math.random()*window.innerWidth, y: -20, targetX: window.innerWidth/2, targetY: window.innerHeight/2 },
-                            Renderable: { spriteId: 3, pulseOffset: Math.random(), r: 168, g: 85, b: 247 },
-                            Pathfollower: { speed: 80.0 }
-                        });
-                    }
-                }
-            }
-
-            ConstructionSystem(ecs, dt) {}
-            
-            CrisisSystem(state, dt) {
-                if (state.activeCrisis) {
-                    state.crisisDuration -= dt;
-                    if(state.crisisDuration <= 0) {
-                        state.activeCrisis = null;
-                        window.Events.emit('COMBAT_LOG', { text: "A anomalia estelar recuou." });
-                    }
-                }
-            }
-
-            SocialSimulationSystem(ecs, state, dt) {
-                ecs.chunks.forEach(c => {
-                    if (c.mask & ComponentMask.SocioPsychology) {
-                        for(let i=0; i<c.size; i++) {
-                            c.storage.SocioPsychology.sanity[i] = Math.max(0, c.storage.SocioPsychology.sanity[i] - (0.5 * dt));
-                        }
-                    }
-                });
-            }
-
-            AnimationSystem(ecs, dt) {
-                ecs.chunks.forEach(c => {
-                    if (c.mask & ComponentMask.Renderable) {
-                        for (let i = 0; i < c.size; i++) {
-                            c.storage.Renderable.pulseOffset[i] += dt * 4.0;
-                        }
-                    }
-                });
-            }
-
-            AudioSystem(state) {
-                if (this.audio.drone) {
-                    // Modulação procedural direta baseada no pânico da simulação
-                    this.audio.drone.frequency.setValueAtTime(50 + (state.collectiveFear * 0.5), this.audio.ctx.currentTime);
-                }
-            }
-
-            RenderSystem(ecs, ctx, alpha, FX) {
-                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-                
-                // Desenhar ligações de rede orgânica entre as estruturas industriais
-                ctx.strokeStyle = 'rgba(40, 10, 10, 0.4)';
-                ctx.lineWidth = 1;
-                let nodes = [];
-
-                ecs.chunks.forEach(c => {
-                    if ((c.mask & ComponentMask.Transform) && (c.mask & ComponentMask.Infrastructure)) {
-                        for(let i=0; i<c.size; i++) {
-                            nodes.push({x: c.storage.Transform.x[i], y: c.storage.Transform.y[i]});
-                        }
-                    }
-                });
-
-                for(let i=0; i<nodes.length; i++) {
-                    for(let j=i+1; j<nodes.length; j++) {
-                        ctx.beginPath();
-                        ctx.moveTo(nodes[i].x, nodes[i].y);
-                        ctx.lineTo(nodes[j].x, nodes[j].y);
-                        ctx.stroke();
-                    }
-                }
-
-                // Renderização em lote focada em cache contíguo
-                ecs.chunks.forEach(c => {
-                    if ((c.mask & ComponentMask.Transform) && (c.mask & ComponentMask.Renderable)) {
-                        const t = c.storage.Transform;
-                        const r = c.storage.Renderable;
-
-                        for (let i = 0; i < c.size; i++) {
-                            let pulse = 1.0 + Math.sin(r.pulseOffset[i]) * 0.08;
-                            let size = (c.mask & ComponentMask.Infrastructure) ? 28 : 6;
-
-                            ctx.save();
-                            ctx.translate(t.x[i], t.y[i]);
-                            ctx.scale(pulse, pulse);
-
-                            // Geometria procedural de Alta Fidelidade
-                            ctx.fillStyle = `rgb(${r.r[i]}, ${r.g[i]}, ${r.b[i]})`;
-                            ctx.beginPath();
-                            if(c.mask & ComponentMask.Infrastructure) {
-                                ctx.arc(0, 0, size, 0, Math.PI * 2);
-                                ctx.fill();
-                                ctx.strokeStyle = '#000000';
-                                ctx.lineWidth = 3;
-                                ctx.stroke();
-                                // Brilho interno do núcleo térmico
-                                ctx.fillStyle = 'rgba(255,255,255,0.3)';
-                                ctx.beginPath();
-                                ctx.arc(-3, -3, size/3, 0, Math.PI*2);
-                                ctx.fill();
-                            } else {
-                                // Unidades móveis (Drones)
-                                ctx.rect(-size/2, -size/2, size, size);
-                                ctx.fill();
-                            }
-                            ctx.restore();
-                        }
-                    }
-                });
-            }
-        }
-
-        // ==========================================
-        // 6. PIPELINE DE PÓS-PROCESSAMENTO VISUAL
-        // ==========================================
-        class VisceralRenderPipeline {
-            constructor(canvas) {
-                this.canvas = canvas;
-                this.ctx = canvas.getContext('2d');
-                this.shake = 0;
-            }
-            triggerShake(v) { this.shake = v; }
-            apply(state, renderBuffer) {
-                this.ctx.save();
-                if (this.shake > 0.1) {
-                    let dx = (Math.random() - 0.5) * this.shake;
-                    let dy = (Math.random() - 0.5) * this.shake;
-                    this.ctx.translate(dx, dy);
-                    this.shake *= 0.85; 
-                }
-
-                renderBuffer();
-                this.ctx.restore();
-
-                // Vinheta dinâmica de sangue reativa ao medo coletivo
-                if (state.collectiveFear > 40) {
-                    let alpha = (state.collectiveFear - 40) / 60 * 0.5;
-                    let grad = this.ctx.createRadialGradient(this.canvas.width/2, this.canvas.height/2, this.canvas.width*0.2, this.canvas.width/2, this.canvas.height/2, this.canvas.width*0.9);
-                    grad.addColorStop(0, 'rgba(0,0,0,0)');
-                    grad.addColorStop(1, `rgba(139, 0, 0, ${alpha})`);
-                    this.ctx.fillStyle = grad;
-                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-                }
-            }
-        }
-
-        // ==========================================
-        // 7. ORQUESTRADOR GLOBAL E INICIALIZAÇÃO
-        // ==========================================
-        const GameState = {
-            weather: 'CALMARIA_MORTA',
-            weatherTimer: 0,
-            siegeTimer: 0,
-            steamPressure: 100,
-            collectiveFear: 0,
-            activeCrisis: null,
-            crisisDuration: 0,
-            resources: { biomass: 300, copper: 150, population: 45 }
-        };
-
-        const canvas = document.getElementById('primary-engine-canvas');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-
-        const audio = new BiopunkAudioEngine();
-        const ecs = new EngineECS();
-        const loop = new DeterministicGameLoop(30);
-        const pipeline = new SystemsPipeline(audio);
-        const FX = new VisceralRenderPipeline(canvas);
-
-        // Subscrição de canais de eventos visuais e de combate
-        window.Events.on('HUD_FLASH', (d) => {
-            FX.triggerShake(20);
-            let log = document.getElementById('terminal-log');
-            let el = document.createElement('div');
-            el.className = "font-bold tracking-wider";
-            el.style.color = d.color || '#ef4444';
-            el.innerText = `[CRÍTICO] > ${d.text}`;
-            log.prepend(el);
-        });
-
-        window.Events.on('COMBAT_LOG', (d) => {
-            let log = document.getElementById('terminal-log');
-            let el = document.createElement('div');
-            el.className = "text-purple-400 tracking-wide";
-            el.innerText = `[SISTEMA] > ${d.text}`;
-            log.prepend(el);
-        });
-
-        // Interface pública exposta para os controlos da HUD HTML
-        window.buildStructure = (type) => {
-            audio.playClick();
-            let margin = 100;
-            let rx = margin + Math.random() * (window.innerWidth - margin * 2);
-            let ry = margin + Math.random() * (window.innerHeight - margin * 2);
-
-            if (type === 'incubadora' && GameState.resources.copper >= 50) {
-                GameState.resources.copper -= 50;
-                ecs.createEntity(ComponentMask.Transform | ComponentMask.Renderable | ComponentMask.Infrastructure | ComponentMask.InfectionVector, {
-                    Transform: { x: rx, y: ry, targetX: rx, targetY: ry },
-                    Renderable: { spriteId: 1, pulseOffset: Math.random(), r: 16, g: 185, b: 129 },
-                    Infrastructure: { tier: 1, temperature: 37, integrity: 100 },
-                    InfectionVector: { rotLevel: 10, sporeEmission: 4 }
-                });
-                window.Events.emit('COMBAT_LOG', { text: "Nova Incubadora de Tecidos acoplada à colmeia." });
-            } else if (type === 'extrator' && GameState.resources.biomass >= 40) {
-                GameState.resources.biomass -= 40;
-                ecs.createEntity(ComponentMask.Transform | ComponentMask.Renderable | ComponentMask.Infrastructure | ComponentMask.EconomicNode, {
-                    Transform: { x: rx, y: ry, targetX: rx, targetY: ry },
-                    Renderable: { spriteId: 2, pulseOffset: Math.random(), r: 217, g: 119, b: 6 },
-                    Infrastructure: { tier: 1, temperature: 24, integrity: 100 },
-                    EconomicNode: { prodRate: 8.0, efficiency: 1.0 }
-                });
-                window.Events.emit('COMBAT_LOG', { text: "Extrator de Cobre Alquímico ativado sob pressão." });
-            } else {
-                window.Events.emit('COMBAT_LOG', { text: "Recursos insuficientes para transmutação." });
-            }
-        };
-
-        window.triggerForcedCrisis = () => {
-            audio.playClick();
-            GameState.activeCrisis = 'ECLIPSE_MECANICO';
-            GameState.crisisDuration = 15.0;
-            window.Events.emit('HUD_FLASH', { text: "ALINHAMENTO ASTRAL FORÇADO: Radiação orgânica detetada.", color: '#ec4899' });
-        };
-
-        // Interação por Clique: Envio e criação de Drones com Pathfinding Dinâmico
-        window.addEventListener('mousedown', (e) => {
-            if (e.target.tagName === 'BUTTON' || document.getElementById('splash-screen').style.display !== 'none') return;
-            audio.playClick();
-            
-            // Injeta drone móvel que persegue as coordenadas do rato no ecrã
-            ecs.createEntity(ComponentMask.Transform | ComponentMask.Renderable | ComponentMask.Pathfollower, {
-                Transform: { x: window.innerWidth / 2, y: window.innerHeight / 2, targetX: e.clientX, targetY: e.clientY },
-                Renderable: { spriteId: 5, pulseOffset: Math.random(), r: 239, g: 68, b: 6 },
-                Pathfollower: { speed: 190.0 }
-            });
-        });
-
-        // Gatilho de Desbloqueio e Inicialização da Engine
-        document.getElementById('splash-screen').addEventListener('click', () => {
-            document.getElementById('splash-screen').style.display = 'none';
-            audio.init();
-
-            // Sementes iniciais de infraestrutura (Fundações)
-            window.buildStructure('incubadora');
-            window.buildStructure('extrator');
-
-            // Arranque oficial do loop de renderização e simulação determinística
-            loop.start(
-                (dt) => pipeline.update(ecs, dt, GameState),
-                (alpha) => {
-                    FX.apply(GameState, () => {
-                        pipeline.RenderSystem(ecs, FX.ctx, alpha, FX);
+                document.querySelectorAll('.build-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const buildingId = btn.getAttribute('data-building');
+                        if (buildingId) this.buildStructure(buildingId);
                     });
+                });
+                
+                this.updateUI();
+            }
 
-                    // Sincronização Otimizada e Direta da Interface Gráfica
-                    document.getElementById('ui-biomass').innerText = Math.floor(GameState.resources.biomass);
-                    document.getElementById('ui-copper').innerText = Math.floor(GameState.resources.copper);
-                    document.getElementById('ui-steam').innerText = Math.floor(GameState.steamPressure) + "%";
-                    document.getElementById('ui-fear').innerText = Math.floor(GameState.collectiveFear) + "%";
-                    document.getElementById('ui-pop').innerText = Math.floor(GameState.resources.population);
-                    document.getElementById('ui-weather').innerText = `ATMOSFERA: ${GameState.weather.replace('_', ' ')}`;
-                    
-                    let timeRemaining = Math.max(0, 40 - Math.floor(GameState.siegeTimer));
-                    document.getElementById('ui-crisis-timer').innerText = `PRÓXIMO ATAQUE EM: ${timeRemaining}s`;
+            simulationTick() {
+                this.dayTimer += 2;
+                if(this.dayTimer >= 20) {
+                    this.dayTimer = 0;
+                    this.advanceDay();
                 }
-            );
-        });
 
-        // Ajuste dinâmico às dimensões do monitor
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
+                const b = (id) => this.buildings.find(i => i.id === id).count;
+                const bRate = (id) => this.buildings.find(i => i.id === id).rate;
+
+                const steamGen = b('boiler') * bRate('boiler');
+                const foodGen = (b('farm') * bRate('farm')) + (b('incubator') * bRate('incubator')) + (b('lab') * bRate('lab'));
+                const woodGen = (b('extractor') * bRate('extractor')) + Math.floor(this.resources.population * 0.1);
+
+                this.resources.steam = Math.min(100, Math.max(0, this.resources.steam - 10 + steamGen));
+                
+                if (this.resources.steam > 10) {
+                    this.resources.biomass += foodGen;
+                    this.resources.copper += woodGen;
+                }
+
+                this.resources.biomass -= Math.floor(this.resources.population * 0.3);
+
+                if (this.resources.steam <= 0) {
+                    this.resources.population = Math.max(0, this.resources.population - 2);
+                    Events.emit('COMBAT_LOG', { text: "🚨 CONGELAMENTO! População a morrer.", type: 'critical' });
+                }
+
+                if (this.resources.biomass <= 0) {
+                    this.resources.biomass = 0;
+                    this.resources.population = Math.max(0, this.resources.population - 1);
+                    Events.emit('COMBAT_LOG', { text: "💀 FOME! Escassez crítica.", type: 'critical' });
+                }
+
+                this.updateUI();
+            }
+
+            buildStructure(buildingId) {
+                const b = this.buildings.find(item => item.id === buildingId);
+                if (!b) return;
+
+                const costType = b.costType; 
+                const costLabel = costType === 'copper' ? 'Madeira' : 'Comida';
+
+                if (this.resources[costType] >= b.costValue) {
+                    this.resources[costType] -= b.costValue;
+                    b.count++;
+                    
+                    if (b.id === 'wall') this.resources.defense += b.rate;
+                    if (b.id === 'house') this.resources.population += b.rate;
+                    if (b.id === 'tower') Events.emit('COMBAT_LOG', { text: `Torre erguida! Defesa ativa contra invasores.` });
+
+                    Events.emit('COMBAT_LOG', { text: `🛠️ ${b.name} construído (Total: ${b.count})` });
+                    this.updateUI();
+                } else {
+                    Events.emit('COMBAT_LOG', { text: `❌ Faltam recursos! Requer ${b.costValue} de ${costLabel}.` });
+                }
+            }
+
+            advanceDay() {
+                this.day++;
+                Events.emit('DAY_ADVANCED', { day: this.day, activeCity: this });
+                
+                if (this.day % 10 === 0) {
+                    document.getElementById('combat-overlay').classList.remove('hidden');
+                    Events.emit('COMBAT_LOG', { text: "⚠️ A HORDA ESTÁ NOS PORTÕES!", type: 'critical' });
+                } else {
+                    document.getElementById('combat-overlay').classList.add('hidden');
+                }
+                
+                this.updateUI();
+            }
+
+            updateUI() {
+                document.getElementById('res-food').innerText = Math.floor(this.resources.biomass);
+                document.getElementById('res-wood').innerText = Math.floor(this.resources.copper);
+                document.getElementById('res-population').innerText = this.resources.population;
+                document.getElementById('colony-steam').innerText = `${Math.floor(this.resources.steam)}%`;
+                document.getElementById('steam-meter').style.width = `${Math.floor(this.resources.steam)}%`;
+                
+                document.getElementById('day-counter').innerText = `DIA ${this.day.toString().padStart(2, '0')}`;
+                
+                const daysLeft = 10 - (this.day % 10 === 0 ? 10 : this.day % 10);
+                document.getElementById('days-left').innerText = daysLeft;
+                
+                const tempText = document.getElementById('colony-temp');
+                if (this.resources.steam < 30) {
+                    tempText.innerText = "🚨 CONGELAMENTO";
+                    tempText.className = "text-red-600 font-bold animate-pulse";
+                } else {
+                    tempText.innerText = "🔥 ESTÁVEL";
+                    tempText.className = "text-orange-500 font-bold";
+                }
+            }
+        }
+
+        window.onload = () => {
+            window.Colony = new ColonyManager();
+            Events.emit('COMBAT_LOG', { text: "Gerenciador de Colónia carregado. Aguardando ordens." });
+        };
     </script>
 </body>
 </html>
