@@ -3,15 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Feudo Brutal</title>
+    <title>Feudo Brutal - AAA Engine</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+
     <style>
-        /* Estética Dark / Industrial */
         body {
             background-color: #09090b; 
             color: #d4d4d8; 
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-            overflow: hidden; 
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
         }
 
         .panel-dark-wood {
@@ -19,7 +23,6 @@
             border-top: 2px solid #27272a;
         }
 
-        /* Botões Metálicos Interativos - Caminhos ajustados direto para assets/ */
         .action-iron {
             display: flex;
             flex-direction: column;
@@ -37,6 +40,8 @@
             transition: all 0.1s ease-in-out;
             width: 100%;
             min-height: 80px;
+            cursor: pointer;
+            pointer-events: auto; /* Garante clique sobre o canvas */
         }
 
         .action-iron:hover {
@@ -55,130 +60,135 @@
             transform: translateY(1px);
         }
 
-        /* Controle Rígido do Tamanho das Imagens */
-        .icon-large { 
-            width: 32px; 
-            height: 32px; 
-            image-rendering: pixelated; 
-            object-fit: contain;
+        .icon-large { width: 32px; height: 32px; image-rendering: pixelated; object-fit: contain; }
+        .icon-small { width: 18px; height: 18px; image-rendering: pixelated; object-fit: contain; }
+
+        /* Container do Phaser */
+        #game-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0; /* Fica atrás da UI */
+        }
+
+        /* UI sobreposta */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none; /* Deixa o mouse passar para o canvas */
+            z-index: 10;
         }
         
-        .icon-small { 
-            width: 18px; 
-            height: 18px; 
-            image-rendering: pixelated; 
-            object-fit: contain;
+        /* Reativa cliques apenas nos painéis */
+        header, footer, #combat-log, #combat-overlay {
+            pointer-events: auto; 
         }
     </style>
 </head>
-<body class="h-screen flex flex-col justify-between selection:bg-red-900 selection:text-white">
+<body>
 
-    <header class="bg-zinc-900/80 border-b border-zinc-800 p-2 shadow-lg backdrop-blur-sm z-10">
-        <div class="max-w-6xl mx-auto flex justify-between items-center text-sm">
-            
-            <div class="flex gap-4 md:gap-6">
-                <div class="flex items-center gap-2 bg-black/50 px-3 py-1 rounded border border-zinc-800">
-                    <img src="assets/food.png" alt="Comida" class="icon-small">
-                    <span id="res-food" class="font-bold text-amber-500">200</span>
-                </div>
-                
-                <div class="flex items-center gap-2 bg-black/50 px-3 py-1 rounded border border-zinc-800">
-                    <img src="assets/wood.png" alt="Madeira" class="icon-small">
-                    <span id="res-wood" class="font-bold text-orange-400">150</span>
-                </div>
+    <div id="game-container"></div>
 
-                <div class="flex items-center gap-2 bg-black/50 px-3 py-1 rounded border border-zinc-800">
-                    <span class="text-zinc-500">👥 Pop:</span>
-                    <span id="res-population" class="font-bold text-zinc-100">30</span>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-6">
-                <div class="text-right">
-                    <div id="day-counter" class="text-zinc-300 font-bold tracking-widest">DIA 01</div>
-                    <div class="text-[10px] text-red-500">Cerco em: <span id="days-left" class="font-bold">10</span> dias</div>
-                </div>
-
-                <div class="w-24 md:w-32 bg-black/50 p-1 rounded border border-zinc-800">
-                    <div class="flex justify-between text-[10px] mb-1">
-                        <span id="colony-temp">🔥 ESTÁVEL</span>
-                        <span id="colony-steam">100%</span>
+    <div id="ui-layer">
+        <header class="bg-zinc-900/90 border-b border-zinc-800 p-2 shadow-lg backdrop-blur-sm">
+            <div class="max-w-6xl mx-auto flex justify-between items-center text-sm">
+                <div class="flex gap-4 md:gap-6">
+                    <div class="flex items-center gap-2 bg-black/50 px-3 py-1 rounded border border-zinc-800">
+                        <img src="assets/food.png" alt="Comida" class="icon-small">
+                        <span id="res-food" class="font-bold text-amber-500">200</span>
                     </div>
-                    <div class="w-full bg-zinc-900 h-2 rounded overflow-hidden">
-                        <div id="steam-meter" class="bg-orange-600 h-full w-full transition-all duration-500"></div>
+                    <div class="flex items-center gap-2 bg-black/50 px-3 py-1 rounded border border-zinc-800">
+                        <img src="assets/wood.png" alt="Madeira" class="icon-small">
+                        <span id="res-wood" class="font-bold text-orange-400">150</span>
+                    </div>
+                    <div class="flex items-center gap-2 bg-black/50 px-3 py-1 rounded border border-zinc-800">
+                        <span class="text-zinc-500">👥 Pop:</span>
+                        <span id="res-population" class="font-bold text-zinc-100">30</span>
                     </div>
                 </div>
+                <div class="flex items-center gap-6">
+                    <div class="text-right">
+                        <div id="day-counter" class="text-zinc-300 font-bold tracking-widest">DIA 01</div>
+                        <div class="text-[10px] text-red-500">Cerco em: <span id="days-left" class="font-bold">10</span> dias</div>
+                    </div>
+                    <div class="w-24 md:w-32 bg-black/50 p-1 rounded border border-zinc-800">
+                        <div class="flex justify-between text-[10px] mb-1">
+                            <span id="colony-temp">🔥 ESTÁVEL</span>
+                            <span id="colony-steam">100%</span>
+                        </div>
+                        <div class="w-full bg-zinc-900 h-2 rounded overflow-hidden">
+                            <div id="steam-meter" class="bg-orange-600 h-full w-full transition-all duration-500"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
+        </header>
 
-        </div>
-    </header>
+        <main class="flex-1 relative p-4 pointer-events-none">
+            <div id="combat-overlay" class="hidden absolute top-10 left-1/2 -translate-x-1/2 bg-red-950/90 border-2 border-red-600 text-red-200 px-8 py-3 shadow-[0_0_30px_rgba(220,38,38,0.5)] text-center">
+                <h2 class="text-xl font-bold tracking-widest animate-pulse">⚔️ A HORDA ATACOU ⚔️</h2>
+                <p class="text-xs mt-1 text-red-400">Defesas sob pressão máxima!</p>
+            </div>
+            <div class="absolute bottom-4 left-4 w-80 h-48 bg-black/80 border border-zinc-800 p-3 overflow-y-auto flex flex-col-reverse text-xs text-zinc-400" id="combat-log">
+                <div><span class="text-zinc-600">SISTEMA:</span> Motor WebGL inicializado. Use o scroll para Zoom.</div>
+            </div>
+        </main>
 
-    <main class="flex-1 relative flex items-center justify-center p-4">
-        
-        <div id="combat-overlay" class="hidden absolute top-10 left-1/2 -translate-x-1/2 bg-red-950/90 border-2 border-red-600 text-red-200 px-8 py-3 shadow-[0_0_30px_rgba(220,38,38,0.5)] z-50 text-center">
-            <h2 class="text-xl font-bold tracking-widest animate-pulse">⚔️ A HORDA ATACOU ⚔️</h2>
-            <p class="text-xs mt-1 text-red-400">Defesas sob pressão máxima!</p>
-        </div>
-
-        <div class="absolute bottom-4 left-4 w-80 h-48 bg-black/80 border border-zinc-800 p-3 overflow-y-auto flex flex-col-reverse text-xs text-zinc-400" id="combat-log">
-            <div><span class="text-zinc-600">SISTEMA:</span> Feudo Brutal inicializado...</div>
-        </div>
-
-    </main>
-
-    <footer class="panel-dark-wood p-3 z-10">
-        <div class="max-w-6xl mx-auto grid grid-cols-4 md:grid-cols-8 gap-2">
-            
-            <button class="build-btn action-iron" data-building="house">
-                <img src="assets/house.png" alt="Cabana" class="icon-large">
-                <span>Cabana</span>
-                <span class="text-[9px] text-orange-400 font-normal">50 Mad.</span>
-            </button>
-            
-            <button class="build-btn action-iron" data-building="farm">
-                <img src="assets/farm.png" alt="Fazenda" class="icon-large">
-                <span>Fazenda</span>
-                <span class="text-[9px] text-orange-400 font-normal">40 Mad.</span>
-            </button>
-
-            <button class="build-btn action-iron" data-building="incubator">
-                <img src="assets/food.png" alt="Incubadora" class="icon-large">
-                <span>Incubadora</span>
-                <span class="text-[9px] text-orange-400 font-normal">100 Mad.</span>
-            </button>
-
-            <button class="build-btn action-iron" data-building="extractor">
-                <img src="assets/wood.png" alt="Lenhador" class="icon-large">
-                <span>Lenhador</span>
-                <span class="text-[9px] text-amber-500 font-normal">30 Com.</span>
-            </button>
-
-            <button class="build-btn action-iron" data-building="boiler">
-                <span>Caldeira</span>
-                <span class="text-[9px] text-orange-400 font-normal">80 Mad.</span>
-            </button>
-
-            <button class="build-btn action-iron" data-building="lab">
-                <span>Laboratório</span>
-                <span class="text-[9px] text-orange-400 font-normal">120 Mad.</span>
-            </button>
-
-            <button class="build-btn action-iron" data-building="wall">
-                <img src="assets/wall.png" alt="Muralha" class="icon-large">
-                <span>Muralha</span>
-                <span class="text-[9px] text-orange-400 font-normal">60 Mad.</span>
-            </button>
-
-            <button class="build-btn action-iron" data-building="tower">
-                <span>Torre Def.</span>
-                <span class="text-[9px] text-amber-500 font-normal">80 Com.</span>
-            </button>
-
-        </div>
-    </footer>
+        <footer class="panel-dark-wood p-3">
+            <div class="max-w-6xl mx-auto grid grid-cols-4 md:grid-cols-8 gap-2">
+                <button class="build-btn action-iron" data-building="house">
+                    <img src="assets/house.png" alt="Cabana" class="icon-large">
+                    <span>Cabana</span>
+                    <span class="text-[9px] text-orange-400 font-normal">50 Mad.</span>
+                </button>
+                <button class="build-btn action-iron" data-building="farm">
+                    <img src="assets/farm.png" alt="Fazenda" class="icon-large">
+                    <span>Fazenda</span>
+                    <span class="text-[9px] text-orange-400 font-normal">40 Mad.</span>
+                </button>
+                <button class="build-btn action-iron" data-building="incubator">
+                    <img src="assets/food.png" alt="Incubadora" class="icon-large">
+                    <span>Incubadora</span>
+                    <span class="text-[9px] text-orange-400 font-normal">100 Mad.</span>
+                </button>
+                <button class="build-btn action-iron" data-building="extractor">
+                    <img src="assets/wood.png" alt="Lenhador" class="icon-large">
+                    <span>Lenhador</span>
+                    <span class="text-[9px] text-amber-500 font-normal">30 Com.</span>
+                </button>
+                <button class="build-btn action-iron" data-building="boiler">
+                    <span>Caldeira</span>
+                    <span class="text-[9px] text-orange-400 font-normal">80 Mad.</span>
+                </button>
+                <button class="build-btn action-iron" data-building="lab">
+                    <span>Laboratório</span>
+                    <span class="text-[9px] text-orange-400 font-normal">120 Mad.</span>
+                </button>
+                <button class="build-btn action-iron" data-building="wall">
+                    <img src="assets/wall.png" alt="Muralha" class="icon-large">
+                    <span>Muralha</span>
+                    <span class="text-[9px] text-orange-400 font-normal">60 Mad.</span>
+                </button>
+                <button class="build-btn action-iron" data-building="tower">
+                    <span>Torre Def.</span>
+                    <span class="text-[9px] text-amber-500 font-normal">80 Com.</span>
+                </button>
+            </div>
+        </footer>
+    </div>
 
     <script>
-        // Sistema de Eventos
+        // ==========================================
+        // 1. SISTEMA DE EVENTOS GLOBORAIS
+        // ==========================================
         window.Events = {
             listeners: {},
             on: function(event, callback) {
@@ -192,33 +202,181 @@
             }
         };
 
-        // Escutador do Log
+        // UI de Log
         Events.on('COMBAT_LOG', (data) => {
             const logBox = document.getElementById('combat-log');
             if (!logBox) return;
-            
             let colorClass = 'text-zinc-300';
             if (data.type === 'critical') colorClass = 'text-red-500 font-bold';
             if (data.type === 'warning') colorClass = 'text-amber-500';
-
             const entry = document.createElement('div');
             entry.className = `mb-1 ${colorClass}`;
             entry.innerHTML = `> ${data.text}`;
-            
             logBox.prepend(entry);
             if (logBox.children.length > 20) logBox.removeChild(logBox.lastChild);
         });
 
+        // ==========================================
+        // 2. PHASER 3 ENGINE (Câmera e Grid)
+        // ==========================================
+        class CityBuilderScene extends Phaser.Scene {
+            constructor() {
+                super({ key: 'CityBuilderScene' });
+                this.isBuilding = false;
+                this.currentBuildingType = null;
+                this.previewSprite = null;
+                
+                this.camConfig = {
+                    drag: 0.85, zoomTarget: 1, zoomSpeed: 0.1, minZoom: 0.3, maxZoom: 2.5
+                };
+            }
+
+            preload() {
+                // Carrega estritamente os assets fornecidos
+                this.load.image('house', 'assets/house.png');
+                this.load.image('farm', 'assets/farm.png');
+                this.load.image('wall', 'assets/wall.png');
+                this.load.image('incubator', 'assets/food.png');
+                this.load.image('extractor', 'assets/wood.png');
+            }
+
+            create() {
+                this.cameras.main.setBackgroundColor('#101014'); // Fundo biomecânico sombrio
+                this.buildingsGroup = this.physics.add.staticGroup();
+
+                // SETUP CÂMERA
+                const cam = this.cameras.main;
+                this.isDragging = false;
+                this.camVelocity = { x: 0, y: 0 };
+
+                this.input.on('pointerdown', (pointer) => {
+                    if (this.isBuilding) return; 
+                    this.isDragging = true;
+                    this.camVelocity = { x: 0, y: 0 };
+                });
+
+                this.input.on('pointermove', (pointer) => {
+                    if (this.isDragging && !this.isBuilding) {
+                        cam.scrollX -= (pointer.position.x - pointer.prevPosition.x) / cam.zoom;
+                        cam.scrollY -= (pointer.position.y - pointer.prevPosition.y) / cam.zoom;
+                        this.camVelocity.x = (pointer.position.x - pointer.prevPosition.x) / cam.zoom;
+                        this.camVelocity.y = (pointer.position.y - pointer.prevPosition.y) / cam.zoom;
+                    }
+
+                    // Sistema de Preview
+                    if (this.isBuilding && this.previewSprite) {
+                        const worldPoint = cam.getWorldPoint(pointer.x, pointer.y);
+                        const snapSize = 16;
+                        this.previewSprite.x = Math.round(worldPoint.x / snapSize) * snapSize;
+                        this.previewSprite.y = Math.round(worldPoint.y / snapSize) * snapSize;
+                        this.validatePlacement();
+                    }
+                });
+
+                this.input.on('pointerup', () => { this.isDragging = false; });
+
+                // Zoom
+                document.getElementById('game-container').addEventListener('wheel', (e) => {
+                    const zoomDir = e.deltaY > 0 ? -1 : 1;
+                    this.camConfig.zoomTarget = Phaser.Math.Clamp(
+                        this.camConfig.zoomTarget + (zoomDir * this.camConfig.zoomSpeed),
+                        this.camConfig.minZoom, this.camConfig.maxZoom
+                    );
+                });
+
+                // Construir ao clicar
+                this.input.on('pointerdown', (pointer) => {
+                    if (this.isBuilding && pointer.leftButtonDown()) {
+                        if (this.previewSprite.tintTopLeft === 0x00ff00) {
+                            this.placeBuilding();
+                        } else {
+                            Events.emit('COMBAT_LOG', { text: "❌ Terreno ocupado.", type: 'warning' });
+                        }
+                    }
+                });
+
+                // Escuta o HUD
+                Events.on('START_PLACEMENT', (buildingId) => {
+                    this.startPlacement(buildingId);
+                });
+            }
+
+            startPlacement(buildingId) {
+                if (this.previewSprite) this.previewSprite.destroy();
+                this.isBuilding = true;
+                this.currentBuildingType = buildingId;
+                
+                // Trata as texturas (caso não tenha asset, usa house provisoriamente)
+                let textureKey = buildingId;
+                if (!this.textures.exists(textureKey)) textureKey = 'house';
+
+                this.previewSprite = this.add.sprite(0, 0, textureKey).setAlpha(0.6).setDepth(100);
+                this.physics.add.existing(this.previewSprite);
+            }
+
+            validatePlacement() {
+                let isOverlapping = false;
+                const bounds = this.previewSprite.getBounds();
+                this.buildingsGroup.children.iterate((building) => {
+                    if (Phaser.Geom.Intersects.RectangleToRectangle(bounds, building.getBounds())) {
+                        isOverlapping = true;
+                    }
+                });
+                this.previewSprite.setTint(isOverlapping ? 0xff0000 : 0x00ff00);
+            }
+
+            placeBuilding() {
+                // Notifica o ColonyManager para debitar os recursos
+                Events.emit('CONFIRM_BUILD', this.currentBuildingType);
+                
+                const building = this.buildingsGroup.create(this.previewSprite.x, this.previewSprite.y, this.previewSprite.texture.key);
+                building.setOrigin(0.5);
+                building.setDepth(this.previewSprite.y); // Fake 3D (Y-sorting)
+                this.cancelPlacement(); // Desliga modo construção após 1 clique
+            }
+
+            cancelPlacement() {
+                this.isBuilding = false;
+                if (this.previewSprite) {
+                    this.previewSprite.destroy();
+                    this.previewSprite = null;
+                }
+            }
+
+            update() {
+                if (!this.isDragging) {
+                    this.cameras.main.scrollX -= this.camVelocity.x;
+                    this.cameras.main.scrollY -= this.camVelocity.y;
+                    this.camVelocity.x *= this.camConfig.drag;
+                    this.camVelocity.y *= this.camConfig.drag;
+                }
+                this.cameras.main.zoom = Phaser.Math.Linear(this.cameras.main.zoom, this.camConfig.zoomTarget, 0.1);
+            }
+        }
+
+        // Configuração do Phaser
+        const config = {
+            type: Phaser.WEBGL,
+            parent: 'game-container',
+            width: window.innerWidth,
+            height: window.innerHeight,
+            pixelArt: true,
+            transparent: true,
+            physics: { default: 'arcade', arcade: { debug: false } },
+            scene: CityBuilderScene
+        };
+
+        // Redimensionamento dinâmico
+        window.addEventListener('resize', () => {
+            if (window.game) window.game.scale.resize(window.innerWidth, window.innerHeight);
+        });
+
+        // ==========================================
+        // 3. COLONY MANAGER (A Lógica)
+        // ==========================================
         class ColonyManager {
             constructor() {
-                this.resources = { 
-                    biomass: 200,    
-                    copper: 150,     
-                    steam: 100,      
-                    population: 30,  
-                    defense: 10      
-                };
-                
+                this.resources = { biomass: 200, copper: 150, steam: 100, population: 30, defense: 10 };
                 this.day = 1;
                 this.dayTimer = 0;
 
@@ -236,26 +394,48 @@
                 this.init();
             }
 
-            get name() { return "Feudo Brutal"; }
-            get defense() { return this.resources.defense; }
-            set defense(v) { this.resources.defense = v; }
-            get copper() { return this.resources.copper; }
-            set copper(v) { this.resources.copper = v; }
-            get biomass() { return this.resources.biomass; }
-            set biomass(v) { this.resources.biomass = v; }
-            get population() { return this.resources.population; }
-            set population(v) { this.resources.population = v; }
-
             init() {
                 setInterval(() => this.simulationTick(), 2000);
                 
                 document.querySelectorAll('.build-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
                         const buildingId = btn.getAttribute('data-building');
-                        if (buildingId) this.buildStructure(buildingId);
+                        this.requestBuild(buildingId);
                     });
                 });
+
+                // Escuta quando o Phaser confirma que o prédio foi colocado no mapa
+                Events.on('CONFIRM_BUILD', (buildingId) => {
+                    this.executeBuild(buildingId);
+                });
                 
+                this.updateUI();
+            }
+
+            // 1º Passo: Checa se tem grana ANTES de virar holograma
+            requestBuild(buildingId) {
+                const b = this.buildings.find(item => item.id === buildingId);
+                if (!b) return;
+
+                if (this.resources[b.costType] >= b.costValue) {
+                    Events.emit('START_PLACEMENT', buildingId);
+                    Events.emit('COMBAT_LOG', { text: `Posicionando ${b.name}...` });
+                } else {
+                    const costLabel = b.costType === 'copper' ? 'Madeira' : 'Comida';
+                    Events.emit('COMBAT_LOG', { text: `❌ Requer ${b.costValue} de ${costLabel}.`, type: 'warning' });
+                }
+            }
+
+            // 2º Passo: Cobra e executa APÓS clicar no chão válido
+            executeBuild(buildingId) {
+                const b = this.buildings.find(item => item.id === buildingId);
+                this.resources[b.costType] -= b.costValue;
+                b.count++;
+                
+                if (b.id === 'wall') this.resources.defense += b.rate;
+                if (b.id === 'house') this.resources.population += b.rate;
+
+                Events.emit('COMBAT_LOG', { text: `🛠️ ${b.name} finalizado!` });
                 this.updateUI();
             }
 
@@ -284,51 +464,26 @@
 
                 if (this.resources.steam <= 0) {
                     this.resources.population = Math.max(0, this.resources.population - 2);
-                    Events.emit('COMBAT_LOG', { text: "🚨 CONGELAMENTO! População a morrer.", type: 'critical' });
+                    Events.emit('COMBAT_LOG', { text: "🚨 CONGELAMENTO!", type: 'critical' });
                 }
 
                 if (this.resources.biomass <= 0) {
                     this.resources.biomass = 0;
                     this.resources.population = Math.max(0, this.resources.population - 1);
-                    Events.emit('COMBAT_LOG', { text: "💀 FOME! Escassez crítica.", type: 'critical' });
+                    Events.emit('COMBAT_LOG', { text: "💀 FOME!", type: 'critical' });
                 }
 
                 this.updateUI();
             }
 
-            buildStructure(buildingId) {
-                const b = this.buildings.find(item => item.id === buildingId);
-                if (!b) return;
-
-                const costType = b.costType; 
-                const costLabel = costType === 'copper' ? 'Madeira' : 'Comida';
-
-                if (this.resources[costType] >= b.costValue) {
-                    this.resources[costType] -= b.costValue;
-                    b.count++;
-                    
-                    if (b.id === 'wall') this.resources.defense += b.rate;
-                    if (b.id === 'house') this.resources.population += b.rate;
-                    if (b.id === 'tower') Events.emit('COMBAT_LOG', { text: `Torre erguida! Defesa ativa contra invasores.` });
-
-                    Events.emit('COMBAT_LOG', { text: `🛠️ ${b.name} construído (Total: ${b.count})` });
-                    this.updateUI();
-                } else {
-                    Events.emit('COMBAT_LOG', { text: `❌ Faltam recursos! Requer ${b.costValue} de ${costLabel}.` });
-                }
-            }
-
             advanceDay() {
                 this.day++;
-                Events.emit('DAY_ADVANCED', { day: this.day, activeCity: this });
-                
                 if (this.day % 10 === 0) {
                     document.getElementById('combat-overlay').classList.remove('hidden');
                     Events.emit('COMBAT_LOG', { text: "⚠️ A HORDA ESTÁ NOS PORTÕES!", type: 'critical' });
                 } else {
                     document.getElementById('combat-overlay').classList.add('hidden');
                 }
-                
                 this.updateUI();
             }
 
@@ -338,26 +493,17 @@
                 document.getElementById('res-population').innerText = this.resources.population;
                 document.getElementById('colony-steam').innerText = `${Math.floor(this.resources.steam)}%`;
                 document.getElementById('steam-meter').style.width = `${Math.floor(this.resources.steam)}%`;
-                
                 document.getElementById('day-counter').innerText = `DIA ${this.day.toString().padStart(2, '0')}`;
                 
                 const daysLeft = 10 - (this.day % 10 === 0 ? 10 : this.day % 10);
                 document.getElementById('days-left').innerText = daysLeft;
-                
-                const tempText = document.getElementById('colony-temp');
-                if (this.resources.steam < 30) {
-                    tempText.innerText = "🚨 CONGELAMENTO";
-                    tempText.className = "text-red-600 font-bold animate-pulse";
-                } else {
-                    tempText.innerText = "🔥 ESTÁVEL";
-                    tempText.className = "text-orange-500 font-bold";
-                }
             }
         }
 
+        // INICIA O MOTOR E O MANAGER ASSIM QUE A PÁGINA CARREGA
         window.onload = () => {
+            window.game = new Phaser.Game(config);
             window.Colony = new ColonyManager();
-            Events.emit('COMBAT_LOG', { text: "Gerenciador de Colónia carregado. Aguardando ordens." });
         };
     </script>
 </body>
