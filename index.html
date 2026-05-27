@@ -3,171 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Feudo Brutal: la plague</title>
+    <title>FEUDO BRUTAL: ORGÂNICO & IMPERIAL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #030303; color: #e0d8c0; font-family: 'Courier New', Courier, monospace; overflow: hidden; }
-        .hud-panel { background: rgba(5, 5, 5, 0.9); border: 1px solid #1a1a1a; box-shadow: inset 0 0 15px rgba(0,0,0,0.9); }
-        @keyframes crtLines { 0% { background-position: 0 0; } 100% { background-position: 0 100%; } }
-        .crt-scanlines::after { content: " "; display: block; position: absolute; inset: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03)); z-index: 99; background-size: 100% 4px, 6px 100%; pointer-events: none; }
-        .shake-heavy { animation: extremeShake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
-        @keyframes extremeShake { 0%, 100% { transform: translate(0, 0); } 10%, 90% { transform: translate(-4px, 2px); } 20%, 80% { transform: translate(4px, -2px); } 30%, 50%, 70% { transform: translate(-4px, -4px); } 40%, 60% { transform: translate(4px, 4px); } }
+        body { background-color: #020202; font-family: 'Courier New', Courier, monospace; overflow: hidden; }
+        .crt::after {
+            content: " "; display: block; position: absolute; inset: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px; pointer-events: none; z-index: 999;
+        }
+        .vignette {
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.95);
+        }
     </style>
 </head>
-<body class="h-screen w-screen relative select-none crt-scanlines">
+<body class="w-screen h-screen crt relative text-neutral-400 select-none">
 
-    <div id="render-viewport" class="absolute inset-0 z-0"></div>
+    <canvas id="primary-engine-canvas" class="absolute inset-0 w-full h-full z-0 vignette"></canvas>
 
-    <div id="hud-layer" class="absolute inset-0 z-10 pointer-events-none flex flex-col justify-between p-4">
+    <div class="absolute inset-0 z-10 pointer-events-none flex flex-col justify-between p-6">
         
-        <header class="hud-panel w-full flex justify-between items-center p-4 pointer-events-auto border-t border-t-zinc-800">
-            <div class="flex gap-12 font-mono text-xs">
-                <div class="flex flex-col"><span class="text-zinc-600 font-bold">🧬 BIOMASSA</span><span id="res-biomass" class="text-green-500 font-black text-xl">200</span></div>
-                <div class="flex flex-col"><span class="text-zinc-600 font-bold">⚙️ COBRE</span><span id="res-copper" class="text-amber-500 font-black text-xl">150</span></div>
-                <div class="flex flex-col"><span class="text-zinc-600 font-bold">👥 POPULAÇÃO</span><span id="res-population" class="text-blue-400 font-black text-xl">30</span></div>
-                <div class="flex flex-col"><span class="text-zinc-600 font-bold">🛡️ CONTENÇÃO</span><span id="res-defense" class="text-red-500 font-black text-xl">40</span></div>
-                <div class="flex flex-col"><span class="text-zinc-600 font-bold">🧠 INSANIDADE</span><span id="res-insanity" class="text-purple-500 font-black text-xl">0%</span></div>
+        <div class="w-full bg-black/80 border border-zinc-900 p-4 flex justify-between items-center pointer-events-auto">
+            <div class="flex gap-10 text-xs">
+                <div><span class="text-zinc-600 block">🥩 BIOMASSA</span><span id="ui-biomass" class="text-emerald-500 font-bold text-lg">0</span></div>
+                <div><span class="text-zinc-600 block">⚙️ COBRE ALQUÍMICO</span><span id="ui-copper" class="text-amber-600 font-bold text-lg">0</span></div>
+                <div><span class="text-zinc-600 block">💨 VAPOR DE SANGUE</span><span id="ui-steam" class="text-orange-500 font-bold text-lg">0</span></div>
+                <div><div><span class="text-zinc-600 block">🧠 MEDO COLETIVO</span><span id="ui-fear" class="text-purple-500 font-bold text-lg">0</span></div></div>
             </div>
             <div class="text-right">
-                <div id="weather-display" class="text-amber-600 text-xs font-black tracking-widest animate-pulse">ATMOSFERA: CALMARIA MORTA</div>
-                <div id="day-counter" class="text-xl font-bold text-zinc-300 font-mono mt-1">CICLO: DIA 01</div>
+                <div id="ui-weather" class="text-red-500 font-bold text-xs tracking-widest animate-pulse">ESTADO: CALMARIA MORTA</div>
             </div>
-        </header>
+        </div>
 
-        <main class="flex-grow w-full flex justify-between items-end my-4 overflow-hidden">
-            <section class="w-80 hud-panel p-4 pointer-events-auto h-96 flex flex-col">
-                <div class="text-zinc-500 text-xs font-bold tracking-widest mb-3 uppercase border-b border-zinc-800 pb-2">Estruturas Disponíveis</div>
-                <div id="build-menu" class="flex-col gap-2 overflow-y-auto flex-grow pr-1">
-                    </div>
-            </section>
+        <div class="w-full flex justify-between items-end pointer-events-auto">
+            <div class="w-96 bg-black/90 border border-zinc-900 p-4 h-48 flex flex-col">
+                <div class="text-[10px] text-zinc-500 border-b border-zinc-900 pb-1 mb-2 tracking-widest font-bold">TRANSMISSÃO SINÁPTICA</div>
+                <div id="terminal-log" class="text-[10px] flex-grow overflow-y-auto flex flex-col gap-1 text-zinc-400"></div>
+            </div>
 
-            <aside class="w-96 hud-panel p-4 pointer-events-auto h-64 flex flex-col">
-                <div class="text-zinc-500 text-xs font-bold tracking-widest mb-2 border-b border-zinc-800 pb-1 uppercase">Log de Transmissão Biomecânica</div>
-                <div id="colony-log" class="flex-grow overflow-y-auto text-[10px] font-mono text-zinc-400 flex flex-col gap-1"></div>
-            </aside>
-        </main>
+            <div class="flex gap-3">
+                <button onclick="window.buildStructure('incubadora')" class="px-4 py-3 bg-neutral-950 border border-emerald-900/60 text-emerald-500 hover:bg-emerald-950 text-xs font-bold tracking-widest uppercase transition-all">Sintetizar Incubadora</button>
+                <button onclick="window.buildStructure('extrator')" class="px-4 py-3 bg-neutral-950 border border-amber-900/60 text-amber-500 hover:bg-amber-950 text-xs font-bold tracking-widest uppercase transition-all">Girar Extrator de Cobre</button>
+            </div>
+        </div>
     </div>
 
     <script type="module">
-        import { HighPerformanceECS, FixedTimestepLoop, ComponentRegistry } from './EngineCore.js';
-        import { AdvancedWeatherSystem, AdvancedEconomySystem, SocioPsychologySystem } from './Systems.js';
-        import { CinematicRenderSystem } from './RenderSystem.js';
-        import { GrandThreatDirector } from './DirectorSystem.js';
+        import { EngineECS, ComponentMask } from './ecs-core.js';
+        import { DeterministicGameLoop } from './game-loop.js';
+        import { SystemsPipeline } from './systems-pipeline.js';
+        import { VisceralRenderPipeline } from './visual-effects.js';
+        import { BiopunkAudioEngine } from './audio-engine.js';
 
-        // Sistema Centralizado Globals de Estado (Data-Driven Architecture)
+        // Inicialização de Barramento Global Síncrono de Eventos
+        class InternalBus {
+            constructor() { this.m = new Map(); }
+            on(e, c) { if(!this.m.has(e)) this.m.set(e,[]); this.m.get(e).push(c); }
+            emit(e, d) { if(this.m.has(e)) this.m.get(e).forEach(c => c(d)); }
+        }
+        window.Events = new InternalBus();
+
+        // Estado Estruturado Base da Engine
         const GameState = {
-            ticks: 0,
-            currentWeather: 'CALMARIA_MORTA',
-            environmentalThermalModifier: 0,
-            sanityDegradationRate: 0.2,
-            infectionSpreadMultiplier: 1.0,
-            globalSteamPressure: 100,
-            resources: {
-                biomass: 200,
-                copper: 150,
-                population: 30,
-                defense: 40,
-                insanity: 0,
-                fanaticism: 0,
-                fear: 0,
-                maxSteam: 100
-            }
+            weather: 'CALMARIA_MORTA',
+            weatherTimer: 0,
+            siegeTimer: 0,
+            steamPressure: 100,
+            collectiveFear: 0,
+            fanaticism: 0,
+            audioSynth: null,
+            resources: { biomass: 250, copper: 100, population: 40 }
         };
 
-        // Instanciação do Barramento de Eventos Síncronos
-        class SimpleBus {
-            constructor() { this.listeners = {}; }
-            on(ev, cb) { if(!this.listeners[ev]) this.listeners[ev] = []; this.listeners[ev].push(cb); }
-            emit(ev, data) { if(this.listeners[ev]) this.listeners[ev].forEach(cb => cb(data)); }
-        }
-        window.Events = new SimpleBus();
+        const canvas = document.getElementById('primary-engine-canvas');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-        // Escuta dos Eventos de Feedback Físico
-        window.Events.on('SCREEN_SHAKE', () => {
-            document.body.classList.add('shake-heavy');
-            setTimeout(() => document.body.classList.remove('shake-heavy'), 400);
+        const audio = new BiopunkAudioEngine();
+        const ecs = new EngineECS();
+        const loop = new DeterministicGameLoop(30);
+        const pipeline = new SystemsPipeline(audio.ctx);
+        const FX = new VisceralRenderPipeline(canvas);
+
+        // Conexão do Barramento para Feedback Cinemático
+        window.Events.on('HUD_FLASH', (data) => {
+            FX.triggerShake(15);
+            const entry = document.createElement('div');
+            entry.className = "text-red-500 font-bold";
+            entry.innerText = `> ${data.text}`;
+            document.getElementById('terminal-log').prepend(entry);
         });
 
         window.Events.on('COMBAT_LOG', (data) => {
-            const log = document.getElementById('colony-log');
             const entry = document.createElement('div');
-            entry.className = data.type === 'critical' ? 'text-red-500 font-bold' : 'text-zinc-400';
-            entry.innerHTML = `> ${data.text}`;
-            log.prepend(entry);
+            entry.className = "text-purple-400";
+            entry.innerText = `> ${data.text}`;
+            document.getElementById('terminal-log').prepend(entry);
         });
 
-        // Inicialização do Core Engine e Sistemas Compartilhados
-        const ecs = new HighPerformanceECS();
-        const loop = new FixedTimestepLoop(60);
-        const renderer = new CinematicRenderSystem('render-viewport');
-        const director = new GrandThreatDirector();
+        // Eventos Globais de Construção Injetados no ECS
+        window.buildStructure = (type) => {
+            audio.playVisceralClick();
+            if (type === 'incubadora') {
+                ecs.createEntity(ComponentMask.Transform | ComponentMask.Renderable | ComponentMask.Infrastructure | ComponentMask.InfectionVector, {
+                    Transform: { x: Math.random() * 10, y: Math.random() * 8, targetX: 0, targetY: 0 },
+                    Renderable: { spriteId: 1, frame: 0, pulseOffset: Math.random(), opacity: 1.0 },
+                    Infrastructure: { tier: 1, temperature: 30, integrity: 100, heatDemand: 5 },
+                    InfectionVector: { rotLevel: 0, sporeEmission: 2, necrosis: 0 }
+                });
+            } else if (type === 'extrator') {
+                ecs.createEntity(ComponentMask.Transform | ComponentMask.Renderable | ComponentMask.Infrastructure | ComponentMask.EconomicNode, {
+                    Transform: { x: Math.random() * 10, y: Math.random() * 8, targetX: 0, targetY: 0 },
+                    Renderable: { spriteId: 2, frame: 0, pulseOffset: Math.random(), opacity: 1.0 },
+                    Infrastructure: { tier: 1, temperature: 20, integrity: 100, heatDemand: 12 },
+                    EconomicNode: { prodRate: 4.5, efficiency: 1.0, corruption: 0 }
+                });
+            }
+        };
 
-        // Registro de Sistemas no Processador ECS
-        ecs.registerSystem(new AdvancedWeatherSystem());
-        ecs.registerSystem(new AdvancedEconomySystem());
-        ecs.registerSystem(new SocioPsychologySystem());
-
-        // Injeção da População e Infraestrutura Inicial no Archetype ECS
-        const infrastructureMask = ComponentRegistry.IDs.Transform | ComponentRegistry.IDs.Renderable | ComponentRegistry.IDs.Infrastructure | ComponentRegistry.IDs.EconomicNode;
-        
-        ecs.createEntity(infrastructureMask, {
-            Transform: { x: 2, y: 3 },
-            Renderable: { spriteKey: 'incubadora' },
-            Infrastructure: { isOperational: true, tier: 1 },
-            EconomicNode: { outputResource: 'biomass', baseRate: 6, count: 1, inputResource: null, inputCost: 0 }
-        });
-
-        ecs.createEntity(infrastructureMask, {
-            Transform: { x: 5, y: 4 },
-            Renderable: { spriteKey: 'extrator' },
-            Infrastructure: { isOperational: true, tier: 1 },
-            EconomicNode: { outputResource: 'copper', baseRate: 4, count: 1, inputResource: 'biomass', inputCost: 2 }
-        });
-
-        // Inicialização do Loop e Pacer de Quadros Dinâmicos
-        loop.start(ecs, GameState, (alpha) => {
-            // Callback de Renderização Sincronizado
-            renderer.render(ecs, alpha, GameState);
-            
-            // Atualização da HUD em tempo real por amostragem
-            document.getElementById('res-biomass').innerText = Math.floor(GameState.resources.biomass);
-            document.getElementById('res-copper').innerText = Math.floor(GameState.resources.copper);
-            document.getElementById('res-population').innerText = Math.floor(GameState.resources.population);
-            document.getElementById('res-defense').innerText = Math.floor(GameState.resources.defense);
-            document.getElementById('res-insanity').innerText = `${Math.floor(GameState.resources.insanity)}%`;
-            document.getElementById('weather-display').innerText = `ATMOSFERA: ${GameState.currentWeather.replace('_', ' ')}`;
-            
-            // Valida o ataque sistêmico da horda
-            director.evaluateGlobalThreat(ecs, GameState);
-        });
-
-        // Lógica de Avanço Diário Através do Engine Ticks
-        setInterval(() => {
-            GameState.resources.day++;
-            document.getElementById('day-counter').innerText = `CICLO: DIA ${String(GameState.resources.day || 1).padStart(2, '0')}`;
-            if(Math.random() < 0.20) director.triggerCinematicEvent(GameState);
-        }, 8000);
-
-        window.World = { renderActiveCity: () => {} };
-
-        // Renderização Inicial do Menu de Construção Industrial
-        const menu = document.getElementById('build-menu');
-        const availableCatalog = [
-            { id: 'caldeira', name: 'Caldeira de Sangue', cost: '80 Cobre' },
-            { id: 'muralha', name: 'Muralha de Ossos', cost: '120 Cobre' }
-        ];
-        
-        availableCatalog.forEach(b => {
-            menu.innerHTML += `
-                <div class="p-2 border border-zinc-800 bg-black/60 mb-2 flex justify-between items-center">
-                    <div>
-                        <div class="text-xs text-zinc-300 font-bold">${b.name}</div>
-                        <div class="text-[9px] text-zinc-500 font-mono">${b.cost}</div>
-                    </div>
-                    <button class="p-1 border border-red-900/50 bg-red-950/20 text-[10px] text-red-500 hover:bg-red-900 hover:text-white transition-all uppercase tracking-widest">Sintetizar</button>
-                </div>
-            `;
-        });
+        // Ativação do Motor sob Demanda do Usuário (Políticas de Áudio do Navegador)
+        window.addEventListener('click', () => {
+            if (!audio.ctx) {
+                audio.init();
+                // Vincula o oscilador de feedback ao estado mental da simulação
+                GameState.audioSynth = audio.drone;
+                loop.start(
+                    (dt) => pipeline.update(ecs, dt, GameState),
+                    (alpha) => {
+                        FX.applyEffects(GameState, () => {
+                            pipeline.RenderSystem(ecs, FX.ctx, alpha, GameState);
+                        });
+                        
+                        // Atualização Dinâmica Otimizada da HUD Cinzel
+                        document.getElementById('ui-biomass').innerText = Math.floor(GameState.resources.biomass);
+                        document.getElementById('ui-copper').innerText = Math.floor(GameState.resources.copper);
+                        document.getElementById('ui-steam').innerText = Math.floor(GameState.steamPressure) + "%";
+                        document.getElementById('ui-fear').innerText = Math.floor(GameState.collectiveFear) + "%";
+                        document.getElementById('ui-weather').innerText = `ATMOSFERA: ${GameState.weather}`;
+                    }
+                );
+            }
+        }, { once: true });
     </script>
 </body>
 </html>
