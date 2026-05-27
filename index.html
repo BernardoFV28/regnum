@@ -53,7 +53,7 @@
         import { DeterministicGameLoop } from './game-loop.js';
         import { SystemsPipeline } from './systems-pipeline.js';
         import { VisceralRenderPipeline } from './visual-effects.js';
-         import { BiopunkAudioEngine } from './audio-engine.js';
+        import { BiopunkAudioEngine } from './audio-engine.js';
                 
         import { SocialSimulationSystem } from './social-simulation.js';
         import { BiopunkAIDirector } from './ai-director.js';
@@ -62,12 +62,13 @@
         
         
         const socialSys = new SocialSimulationSystem();
+        
         importAI = new BiopunkAIDirector();
-        const pathfinder = new FastPathfinder(64, 64);
-        const crisisDirector = new CinematicCrisisDirector();
-        window.Events.on('CRISIS_TRIGGERED', (data) => {
-            crisisDirector.triggerCrisis(data.type, GameState);
-        });
+            const pathfinder = new FastPathfinder(64, 64);
+            const crisisDirector = new CinematicCrisisDirector();
+            window.Events.on('CRISIS_TRIGGERED', (data) => {
+                crisisDirector.triggerCrisis(data.type, GameState);
+            });
         function tickSubsystems(ecs, dt, GameState) {
             pathfinder.processWalkingPool(ecs, dt);
             socialSys.update(ecs, dt, GameState);
