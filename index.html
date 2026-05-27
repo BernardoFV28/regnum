@@ -54,14 +54,29 @@
                     <div class="text-zinc-600">> Núcleo de Simulação Inicializado com Sucesso.</div>
                 </div>
             </div>
+<footer class="bottom-bar panel-dark-wood">
+    <button class="build-btn action-iron" data-building="house">
+        <img src="assets/icons/house.png" alt="Casa" class="icon-large">
+        <span>Cabana</span>
+    </button>
+    
+    <button class="build-btn action-iron" data-building="farm">
+        <img src="assets/icons/farm.png" alt="Fazenda" class="icon-large">
+        <span>Fazenda</span>
+    </button>
 
-            <div class="flex flex-col gap-2">
-                <button onclick="window.buildStructure('incubadora')" class="px-6 py-3 bg-zinc-950 border border-emerald-950 text-emerald-500 hover:bg-emerald-900/20 text-xs font-bold tracking-widest uppercase transition-all shadow-lg pointer-events-auto">Sintetizar Incubadora (-50 Cobre)</button>
-                <button onclick="window.buildStructure('extrator')" class="px-6 py-3 bg-zinc-950 border border-amber-950 text-amber-500 hover:bg-amber-900/20 text-xs font-bold tracking-widest uppercase transition-all shadow-lg pointer-events-auto">Girar Extrator Alquímico (-40 Biomassa)</button>
-                <button onclick="window.triggerForcedCrisis()" class="px-6 py-2 bg-zinc-950 border border-purple-950 text-purple-400 hover:bg-purple-900/20 text-[10px] font-bold tracking-widest uppercase transition-all shadow-lg pointer-events-auto">Forçar Alinhamento Astral (Crise)</button>
-            </div>
-        </div>
+    <button class="build-btn action-iron" data-building="incubator">
+        <img src="assets/icons/food.png" alt="Incubadora" class="icon-large">
+        <span>Incubadora</span>
+    </button>
+
+    <button class="build-btn action-iron" data-building="wall">
+        <img src="assets/icons/wall.png" alt="Muralha" class="icon-large">
+        <span>Muralha</span>
+    </button>
+</footer>
     </div>
+</div>
 
     <script type="module">
         // ==========================================
