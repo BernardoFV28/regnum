@@ -1,12 +1,9 @@
-// Injetado no EmpireEngine.js
+
 processThermalDynamics() {
-    // Array A é o estado atual, Array B é o próximo frame (Ping-Pong Buffering)
     const gridSize = 1000; 
     
     // Difusão Térmica O(N) Otimizada
     for (let i = 0; i < this.thermalGrid.length; i++) {
-        // Se houver uma tubulação no tile 'i', a propagação é 90% eficiente.
-        // Se for terreno de neve profunda, o calor dissipa 60% mais rápido.
         let localHeat = this.thermalGrid[i];
         
         // Penalidade Ambiental Brutal (Inverno Eterno)
