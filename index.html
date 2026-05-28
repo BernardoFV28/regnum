@@ -1,498 +1,1464 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Feudo Brutal - AAA Engine</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-    <style>
-        body {
-            background-color: #09090b; 
-            color: #d4d4d8; 
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            overflow: hidden;
-            margin: 0;
-            padding: 0;
-        }
+<title>IMPERIUM CARNIS — BIOMECHANICAL FROST EMPIRE</title>
 
-        .panel-dark-wood {
-            background-color: #121214;
-            border-top: 2px solid #27272a;
-        }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Rajdhani:wght@300;400;500;700&display=swap" rel="stylesheet">
 
-        .action-iron {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 0.5rem;
-            background-color: #18181b;
-            border: 1px solid #3f3f46;
-            color: #a1a1aa;
-            text-transform: uppercase;
-            font-size: 0.70rem;
-            font-weight: bold;
-            letter-spacing: 0.05em;
-            transition: all 0.1s ease-in-out;
-            width: 100%;
-            min-height: 80px;
-            cursor: pointer;
-            pointer-events: auto;
-        }
+<style>
 
-        .action-iron:hover {
-            background-image: url('assets/iron_button_hover.png');
-            background-size: cover;
-            background-position: center;
-            color: #f4f4f5;
-            border-color: #71717a;
-            transform: translateY(-2px);
-        }
+/* =========================================================
+   IMPERIUM CARNIS
+   AAA BIOMECHANICAL IMPERIAL UI
+========================================================= */
 
-        .action-iron:active {
-            background-image: url('assets/iron_button_active.png');
-            background-size: cover;
-            background-position: center;
-            transform: translateY(1px);
-        }
+:root{
 
-        .icon-large { width: 32px; height: 32px; image-rendering: pixelated; object-fit: contain; }
-        .icon-small { width: 18px; height: 18px; image-rendering: pixelated; object-fit: contain; }
+    --bg:#07090b;
+    --bg2:#0f1318;
+    --panel:#0d1014e6;
 
-        #game-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 0;
-        }
+    --iron:#1f2328;
+    --iron2:#313841;
 
-        #ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            pointer-events: none;
-            z-index: 10;
-        }
-        
-        header, footer, #combat-log, #combat-overlay {
-            pointer-events: auto; 
-        }
-    </style>
+    --copper:#9d5f30;
+    --copperGlow:#d08b45;
+
+    --blood:#5d0d11;
+    --steam:#94aab8;
+
+    --frost:#d7ecff;
+    --thermal:#ff8f52;
+
+    --green:#6cffae;
+    --red:#ff4e5f;
+    --yellow:#ffce5e;
+
+    --text:#d5dce4;
+    --muted:#8b96a3;
+
+    --hudHeight:78px;
+    --leftPanel:360px;
+    --rightPanel:360px;
+
+    --shadow:
+        0 0 0 1px rgba(255,255,255,.03),
+        0 10px 30px rgba(0,0,0,.55),
+        inset 0 0 80px rgba(255,255,255,.02);
+
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html,body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Rajdhani',sans-serif;
+}
+
+/* =========================================================
+   GLOBAL ATMOSPHERE
+========================================================= */
+
+body::before{
+    content:'';
+    position:fixed;
+    inset:0;
+
+    background:
+        radial-gradient(circle at top, rgba(255,110,50,.08), transparent 25%),
+        radial-gradient(circle at bottom, rgba(70,110,180,.06), transparent 25%),
+        linear-gradient(to bottom, rgba(255,255,255,.02), rgba(0,0,0,.4));
+
+    pointer-events:none;
+    z-index:200;
+}
+
+body::after{
+    content:'';
+    position:fixed;
+    inset:0;
+
+    background-image:
+        repeating-linear-gradient(
+            to bottom,
+            rgba(255,255,255,.01),
+            rgba(255,255,255,.01) 1px,
+            transparent 1px,
+            transparent 3px
+        );
+
+    mix-blend-mode:soft-light;
+    opacity:.3;
+
+    pointer-events:none;
+    z-index:201;
+}
+
+/* =========================================================
+   MAIN LAYOUT
+========================================================= */
+
+#game-root{
+    position:relative;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+}
+
+/* =========================================================
+   WORLD VIEWPORT
+========================================================= */
+
+#world-viewport{
+
+    position:absolute;
+    inset:0;
+    overflow:hidden;
+    background:
+        radial-gradient(circle at center, #182028 0%, #0b0e12 55%, #050608 100%);
+}
+
+#world{
+
+    position:absolute;
+    width:5000px;
+    height:5000px;
+
+    transform-origin:center center;
+
+    background:
+        radial-gradient(circle at 20% 30%, rgba(255,255,255,.03), transparent 10%),
+        radial-gradient(circle at 70% 80%, rgba(255,255,255,.03), transparent 8%),
+
+        linear-gradient(
+            rgba(255,255,255,.015) 1px,
+            transparent 1px
+        ),
+
+        linear-gradient(
+            90deg,
+            rgba(255,255,255,.015) 1px,
+            transparent 1px
+        ),
+
+        linear-gradient(
+            to bottom,
+            #12161d,
+            #090c10
+        );
+
+    background-size:
+        auto,
+        auto,
+        128px 128px,
+        128px 128px,
+        auto;
+
+    will-change:transform;
+}
+
+/* =========================================================
+   BIOME FOG
+========================================================= */
+
+.fog-layer{
+
+    position:absolute;
+    inset:-10%;
+    pointer-events:none;
+
+    background:
+        radial-gradient(circle at 50% 50%, rgba(180,220,255,.05), transparent 40%),
+        radial-gradient(circle at 20% 70%, rgba(255,255,255,.04), transparent 35%),
+        radial-gradient(circle at 80% 30%, rgba(255,255,255,.04), transparent 40%);
+
+    filter:blur(60px);
+
+    animation:fogMove 40s linear infinite;
+}
+
+@keyframes fogMove{
+
+    0%{
+        transform:translateX(0px);
+    }
+
+    50%{
+        transform:translateX(-200px);
+    }
+
+    100%{
+        transform:translateX(0px);
+    }
+}
+
+/* =========================================================
+   SNOW PARTICLES
+========================================================= */
+
+.snow{
+
+    position:absolute;
+    width:2px;
+    height:2px;
+
+    background:white;
+    border-radius:50%;
+
+    opacity:.7;
+
+    animation:snowFall linear infinite;
+}
+
+@keyframes snowFall{
+
+    from{
+        transform:translateY(-20px);
+    }
+
+    to{
+        transform:translateY(120vh);
+    }
+}
+
+/* =========================================================
+   TOP HUD
+========================================================= */
+
+#top-hud{
+
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+
+    height:var(--hudHeight);
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    padding:0 18px;
+
+    background:
+        linear-gradient(
+            to bottom,
+            rgba(0,0,0,.95),
+            rgba(10,12,16,.75)
+        );
+
+    border-bottom:
+        1px solid rgba(255,255,255,.08);
+
+    backdrop-filter:blur(12px);
+
+    z-index:100;
+}
+
+.hud-left,
+.hud-center,
+.hud-right{
+    display:flex;
+    align-items:center;
+    gap:16px;
+}
+
+.resource{
+
+    position:relative;
+
+    min-width:120px;
+    padding:8px 14px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.04),
+            rgba(0,0,0,.4)
+        );
+
+    border:
+        1px solid rgba(255,255,255,.06);
+
+    border-radius:10px;
+
+    overflow:hidden;
+
+    box-shadow:var(--shadow);
+
+    transition:.3s;
+}
+
+.resource:hover{
+
+    transform:translateY(-2px);
+    border-color:rgba(255,180,100,.4);
+
+    box-shadow:
+        0 0 20px rgba(255,160,80,.2),
+        inset 0 0 20px rgba(255,255,255,.04);
+}
+
+.resource::before{
+
+    content:'';
+    position:absolute;
+    inset:0;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(255,255,255,.06),
+            transparent
+        );
+
+    transform:translateX(-100%);
+
+    animation:scan 4s linear infinite;
+}
+
+@keyframes scan{
+
+    to{
+        transform:translateX(100%);
+    }
+}
+
+.resource-title{
+
+    font-size:11px;
+    letter-spacing:2px;
+    color:var(--muted);
+    text-transform:uppercase;
+}
+
+.resource-value{
+
+    font-size:24px;
+    font-weight:700;
+    color:var(--text);
+}
+
+.resource-icon{
+
+    position:absolute;
+    right:10px;
+    top:10px;
+
+    opacity:.2;
+    font-size:28px;
+
+    animation:pulse 3s infinite;
+}
+
+@keyframes pulse{
+
+    0%,100%{
+        transform:scale(1);
+        opacity:.2;
+    }
+
+    50%{
+        transform:scale(1.2);
+        opacity:.45;
+    }
+}
+
+/* =========================================================
+   SIDE PANELS
+========================================================= */
+
+.panel{
+
+    position:absolute;
+    top:calc(var(--hudHeight) + 10px);
+    bottom:14px;
+
+    background:var(--panel);
+
+    border:
+        1px solid rgba(255,255,255,.06);
+
+    box-shadow:var(--shadow);
+
+    backdrop-filter:blur(16px);
+
+    overflow:hidden;
+
+    z-index:80;
+}
+
+#left-panel{
+
+    left:14px;
+    width:var(--leftPanel);
+
+    border-radius:18px;
+}
+
+#right-panel{
+
+    right:14px;
+    width:var(--rightPanel);
+
+    border-radius:18px;
+}
+
+/* =========================================================
+   PANEL HEADER
+========================================================= */
+
+.panel-header{
+
+    height:58px;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    padding:0 18px;
+
+    border-bottom:
+        1px solid rgba(255,255,255,.05);
+
+    background:
+        linear-gradient(
+            to right,
+            rgba(255,130,60,.08),
+            transparent
+        );
+}
+
+.panel-title{
+
+    font-family:'Cinzel',serif;
+    letter-spacing:2px;
+    font-size:18px;
+}
+
+/* =========================================================
+   BUILD MENU
+========================================================= */
+
+.build-list{
+    padding:14px;
+    overflow:auto;
+    height:calc(100% - 58px);
+}
+
+.build-card{
+
+    position:relative;
+
+    margin-bottom:14px;
+    padding:14px;
+
+    border-radius:14px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.03),
+            rgba(0,0,0,.35)
+        );
+
+    border:
+        1px solid rgba(255,255,255,.05);
+
+    cursor:pointer;
+
+    overflow:hidden;
+
+    transition:.35s;
+}
+
+.build-card:hover{
+
+    transform:translateY(-4px);
+
+    border-color:
+        rgba(255,160,90,.5);
+
+    box-shadow:
+        0 0 30px rgba(255,140,70,.12),
+        inset 0 0 40px rgba(255,255,255,.03);
+}
+
+.build-card::before{
+
+    content:'';
+    position:absolute;
+    inset:0;
+
+    background:
+        linear-gradient(
+            120deg,
+            transparent,
+            rgba(255,255,255,.08),
+            transparent
+        );
+
+    transform:translateX(-120%);
+    transition:1s;
+}
+
+.build-card:hover::before{
+    transform:translateX(120%);
+}
+
+.build-name{
+
+    font-size:18px;
+    font-weight:700;
+    letter-spacing:1px;
+}
+
+.build-desc{
+
+    margin-top:6px;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.4;
+}
+
+.build-meta{
+
+    display:flex;
+    gap:10px;
+    margin-top:12px;
+    flex-wrap:wrap;
+}
+
+.meta{
+
+    font-size:11px;
+    padding:5px 8px;
+
+    border-radius:999px;
+
+    background:rgba(255,255,255,.04);
+}
+
+/* =========================================================
+   MINIMAP
+========================================================= */
+
+#minimap{
+
+    position:absolute;
+    right:24px;
+    bottom:24px;
+
+    width:260px;
+    height:260px;
+
+    background:
+        radial-gradient(circle, #10161c, #06080b);
+
+    border-radius:18px;
+
+    border:
+        1px solid rgba(255,255,255,.06);
+
+    overflow:hidden;
+
+    box-shadow:var(--shadow);
+
+    z-index:110;
+}
+
+#minimap::before{
+
+    content:'';
+    position:absolute;
+    inset:0;
+
+    background:
+        repeating-linear-gradient(
+            to bottom,
+            rgba(255,255,255,.03),
+            rgba(255,255,255,.03) 1px,
+            transparent 1px,
+            transparent 4px
+        );
+
+    opacity:.2;
+}
+
+#minimap-scan{
+
+    position:absolute;
+    top:-100%;
+    left:0;
+    width:100%;
+    height:100%;
+
+    background:
+        linear-gradient(
+            to bottom,
+            transparent,
+            rgba(130,255,170,.1),
+            transparent
+        );
+
+    animation:minimapScan 4s linear infinite;
+}
+
+@keyframes minimapScan{
+
+    to{
+        transform:translateY(300%);
+    }
+}
+
+/* =========================================================
+   CITY PANEL
+========================================================= */
+
+.city-stats{
+    padding:18px;
+}
+
+.stat{
+
+    margin-bottom:16px;
+}
+
+.stat-label{
+
+    display:flex;
+    justify-content:space-between;
+
+    margin-bottom:6px;
+    font-size:13px;
+}
+
+.bar{
+
+    height:12px;
+
+    border-radius:999px;
+
+    overflow:hidden;
+
+    background:
+        rgba(255,255,255,.05);
+
+    border:
+        1px solid rgba(255,255,255,.04);
+}
+
+.bar-fill{
+
+    height:100%;
+
+    background:
+        linear-gradient(
+            90deg,
+            var(--thermal),
+            #ffca7a
+        );
+
+    box-shadow:
+        0 0 20px rgba(255,160,70,.3);
+
+    animation:barPulse 4s infinite;
+}
+
+@keyframes barPulse{
+
+    50%{
+        filter:brightness(1.2);
+    }
+}
+
+/* =========================================================
+   EVENT LOG
+========================================================= */
+
+#event-log{
+
+    position:absolute;
+
+    left:390px;
+    bottom:20px;
+
+    width:460px;
+    max-height:260px;
+
+    overflow:auto;
+
+    padding:12px;
+
+    background:
+        rgba(5,6,8,.75);
+
+    border:
+        1px solid rgba(255,255,255,.05);
+
+    border-radius:16px;
+
+    backdrop-filter:blur(14px);
+
+    z-index:90;
+}
+
+.log{
+
+    padding:10px 12px;
+    margin-bottom:10px;
+
+    border-left:3px solid var(--red);
+
+    background:
+        rgba(255,255,255,.03);
+
+    animation:logEntry .5s ease;
+}
+
+@keyframes logEntry{
+
+    from{
+        transform:translateX(-30px);
+        opacity:0;
+    }
+
+    to{
+        transform:translateX(0px);
+        opacity:1;
+    }
+}
+
+.log-time{
+
+    color:var(--muted);
+    font-size:11px;
+    margin-bottom:4px;
+}
+
+.log-text{
+    font-size:14px;
+}
+
+/* =========================================================
+   BUILD OVERLAY
+========================================================= */
+
+#build-overlay{
+
+    position:absolute;
+    inset:0;
+
+    pointer-events:none;
+
+    opacity:0;
+    transition:.25s;
+
+    z-index:70;
+}
+
+#build-overlay.active{
+    opacity:1;
+}
+
+.grid{
+
+    position:absolute;
+    inset:0;
+
+    background-image:
+        linear-gradient(
+            rgba(255,255,255,.03) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            90deg,
+            rgba(255,255,255,.03) 1px,
+            transparent 1px
+        );
+
+    background-size:64px 64px;
+}
+
+#placement{
+
+    position:absolute;
+    width:128px;
+    height:128px;
+
+    border:
+        2px solid var(--green);
+
+    background:
+        rgba(100,255,170,.1);
+
+    backdrop-filter:blur(2px);
+
+    box-shadow:
+        0 0 30px rgba(100,255,170,.35);
+
+    animation:holoPulse 2s infinite;
+}
+
+@keyframes holoPulse{
+
+    50%{
+        transform:scale(1.02);
+        filter:brightness(1.25);
+    }
+}
+
+/* =========================================================
+   OVERLAYS
+========================================================= */
+
+.overlay{
+
+    position:absolute;
+    inset:0;
+
+    pointer-events:none;
+    opacity:0;
+
+    mix-blend-mode:screen;
+
+    transition:.4s;
+
+    z-index:150;
+}
+
+.overlay.active{
+    opacity:1;
+}
+
+#cold-overlay{
+
+    background:
+        radial-gradient(circle, transparent 30%, rgba(130,180,255,.08));
+}
+
+#danger-overlay{
+
+    background:
+        radial-gradient(circle, transparent 20%, rgba(255,40,40,.1));
+
+    animation:dangerPulse 1s infinite;
+}
+
+@keyframes dangerPulse{
+
+    50%{
+        opacity:.6;
+    }
+}
+
+/* =========================================================
+   BUILDINGS
+========================================================= */
+
+.building{
+
+    position:absolute;
+
+    width:140px;
+    height:140px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #2a2d32,
+            #0d0f13
+        );
+
+    border:
+        1px solid rgba(255,255,255,.08);
+
+    box-shadow:
+        0 0 40px rgba(0,0,0,.6),
+        inset 0 0 20px rgba(255,255,255,.03);
+
+    border-radius:12px;
+
+    overflow:hidden;
+}
+
+.building::before{
+
+    content:'';
+    position:absolute;
+    inset:0;
+
+    background:
+        radial-gradient(circle at top, rgba(255,140,60,.15), transparent 50%);
+}
+
+.building::after{
+
+    content:'';
+    position:absolute;
+    width:12px;
+    height:12px;
+
+    background:var(--thermal);
+    border-radius:50%;
+
+    top:20px;
+    right:20px;
+
+    box-shadow:
+        0 0 18px var(--thermal);
+
+    animation:pulse 2s infinite;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media(max-width:1300px){
+
+    :root{
+        --leftPanel:300px;
+        --rightPanel:300px;
+    }
+
+    #event-log{
+        width:340px;
+    }
+}
+
+@media(max-width:1024px){
+
+    #left-panel{
+        width:260px;
+    }
+
+    #right-panel{
+        display:none;
+    }
+
+    #event-log{
+        left:290px;
+    }
+}
+
+@media(max-width:768px){
+
+    #top-hud{
+        flex-wrap:wrap;
+        height:auto;
+        padding:8px;
+        gap:8px;
+    }
+
+    .resource{
+        min-width:95px;
+    }
+
+    #left-panel{
+        width:100%;
+        height:260px;
+        top:auto;
+        bottom:0;
+        left:0;
+        border-radius:20px 20px 0 0;
+    }
+
+    #event-log,
+    #minimap{
+        display:none;
+    }
+}
+
+</style>
 </head>
+
 <body>
 
-    <div id="game-container"></div>
+<div id="game-root">
 
-    <div id="ui-layer">
-        <header class="bg-zinc-900/90 border-b border-zinc-800 p-2 shadow-lg backdrop-blur-sm">
-            <div class="max-w-6xl mx-auto flex justify-between items-center text-sm">
-                <div class="flex gap-4 md:gap-6">
-                    <div class="flex items-center gap-2 bg-black/50 px-3 py-1 rounded border border-zinc-800">
-                        <img src="assets/food.png" alt="Comida" class="icon-small">
-                        <span id="res-food" class="font-bold text-amber-500">200</span>
-                    </div>
-                    <div class="flex items-center gap-2 bg-black/50 px-3 py-1 rounded border border-zinc-800">
-                        <img src="assets/wood.png" alt="Madeira" class="icon-small">
-                        <span id="res-wood" class="font-bold text-orange-400">150</span>
-                    </div>
-                    <div class="flex items-center gap-2 bg-black/50 px-3 py-1 rounded border border-zinc-800">
-                        <span class="text-zinc-500">👥 Pop:</span>
-                        <span id="res-population" class="font-bold text-zinc-100">30</span>
-                    </div>
-                </div>
-                <div class="flex items-center gap-6">
-                    <div class="text-right">
-                        <div id="day-counter" class="text-zinc-300 font-bold tracking-widest">DIA 01</div>
-                        <div class="text-[10px] text-red-500">Cerco em: <span id="days-left" class="font-bold">10</span> dias</div>
-                    </div>
-                    <div class="w-24 md:w-32 bg-black/50 p-1 rounded border border-zinc-800">
-                        <div class="flex justify-between text-[10px] mb-1">
-                            <span id="colony-temp">🔥 ESTÁVEL</span>
-                            <span id="colony-steam">100%</span>
-                        </div>
-                        <div class="w-full bg-zinc-900 h-2 rounded overflow-hidden">
-                            <div id="steam-meter" class="bg-orange-600 h-full w-full transition-all duration-500"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </header>
+    <!-- WORLD -->
 
-        <main class="flex-1 relative p-4 pointer-events-none">
-            <div id="combat-overlay" class="hidden absolute top-10 left-1/2 -translate-x-1/2 bg-red-950/90 border-2 border-red-600 text-red-200 px-8 py-3 shadow-[0_0_30px_rgba(220,38,38,0.5)] text-center">
-                <h2 class="text-xl font-bold tracking-widest animate-pulse">⚔️ A HORDA ATACOU ⚔️</h2>
-                <p class="text-xs mt-1 text-red-400">Defesas sob pressão máxima!</p>
-            </div>
-            <div class="absolute bottom-4 left-4 w-80 h-48 bg-black/80 border border-zinc-800 p-3 overflow-y-auto flex flex-col-reverse text-xs text-zinc-400" id="combat-log">
-                <div><span class="text-zinc-600">SISTEMA:</span> Motor WebGL inicializado. Use o scroll para Zoom.</div>
-            </div>
-        </main>
+    <div id="world-viewport">
 
-        <footer class="panel-dark-wood p-3">
-            <div class="max-w-6xl mx-auto grid grid-cols-4 md:grid-cols-8 gap-2">
-                <button class="build-btn action-iron" data-building="house">
-                    <img src="assets/house.png" alt="Cabana" class="icon-large">
-                    <span>Cabana</span>
-                    <span class="text-[9px] text-orange-400 font-normal">50 Mad.</span>
-                </button>
-                <button class="build-btn action-iron" data-building="farm">
-                    <img src="assets/farm.png" alt="Fazenda" class="icon-large">
-                    <span>Fazenda</span>
-                    <span class="text-[9px] text-orange-400 font-normal">40 Mad.</span>
-                </button>
-                <button class="build-btn action-iron" data-building="incubator">
-                    <img src="assets/food.png" alt="Incubadora" class="icon-large">
-                    <span>Incubadora</span>
-                    <span class="text-[9px] text-orange-400 font-normal">100 Mad.</span>
-                </button>
-                <button class="build-btn action-iron" data-building="extractor">
-                    <img src="assets/wood.png" alt="Lenhador" class="icon-large">
-                    <span>Lenhador</span>
-                    <span class="text-[9px] text-amber-500 font-normal">30 Com.</span>
-                </button>
-                <button class="build-btn action-iron" data-building="boiler">
-                    <span>Caldeira</span>
-                    <span class="text-[9px] text-orange-400 font-normal">80 Mad.</span>
-                </button>
-                <button class="build-btn action-iron" data-building="lab">
-                    <span>Laboratório</span>
-                    <span class="text-[9px] text-orange-400 font-normal">120 Mad.</span>
-                </button>
-                <button class="build-btn action-iron" data-building="wall">
-                    <img src="assets/wall.png" alt="Muralha" class="icon-large">
-                    <span>Muralha</span>
-                    <span class="text-[9px] text-orange-400 font-normal">60 Mad.</span>
-                </button>
-                <button class="build-btn action-iron" data-building="tower">
-                    <span>Torre Def.</span>
-                    <span class="text-[9px] text-amber-500 font-normal">80 Com.</span>
-                </button>
-            </div>
-        </footer>
+        <div id="world">
+
+            <div class="fog-layer"></div>
+
+            <!-- BUILDINGS -->
+
+            <div class="building" style="left:1200px; top:1400px;"></div>
+            <div class="building" style="left:1700px; top:1600px;"></div>
+            <div class="building" style="left:2200px; top:1800px;"></div>
+
+        </div>
+
     </div>
 
-    <script>
-        // ==========================================
-        // 1. SISTEMA DE EVENTOS GLOBAIS
-        // ==========================================
-        window.Events = {
-            listeners: {},
-            on: function(event, callback) {
-                if (!this.listeners[event]) this.listeners[event] = [];
-                this.listeners[event].push(callback);
-            },
-            emit: function(event, data) {
-                if (this.listeners[event]) {
-                    this.listeners[event].forEach(callback => callback(data));
-                }
-            }
-        };
+    <!-- TOP HUD -->
 
-        Events.on('COMBAT_LOG', (data) => {
-            const logBox = document.getElementById('combat-log');
-            if (!logBox) return;
-            let colorClass = 'text-zinc-300';
-            if (data.type === 'critical') colorClass = 'text-red-500 font-bold';
-            if (data.type === 'warning') colorClass = 'text-amber-500';
-            const entry = document.createElement('div');
-            entry.className = `mb-1 ${colorClass}`;
-            entry.innerHTML = `> ${data.text}`;
-            logBox.prepend(entry);
-            if (logBox.children.length > 20) logBox.removeChild(logBox.lastChild);
-        });
+    <header id="top-hud">
 
-        // ==========================================
-        // 2. PHASER 3 ENGINE (Câmera e Grid)
-        // ==========================================
-        class CityBuilderScene extends Phaser.Scene {
-            constructor() {
-                super({ key: 'CityBuilderScene' });
-                this.isBuilding = false;
-                this.currentBuildingType = null;
-                this.previewSprite = null;
-                
-                this.camConfig = {
-                    drag: 0.85, zoomTarget: 1, zoomSpeed: 0.1, minZoom: 0.3, maxZoom: 2.5
-                };
-            }
+        <div class="hud-left">
 
-            preload() {
-                this.load.image('house', 'assets/house.png');
-                this.load.image('farm', 'assets/farm.png');
-                this.load.image('wall', 'assets/wall.png');
-                this.load.image('incubator', 'assets/food.png');
-                this.load.image('extractor', 'assets/wood.png');
-            }
+            <div class="resource">
+                <div class="resource-title">Biomassa</div>
+                <div class="resource-value">12.4K</div>
+                <div class="resource-icon">🫀</div>
+            </div>
 
-            create() {
-                this.cameras.main.setBackgroundColor('#101014');
-                this.buildingsGroup = this.physics.add.staticGroup();
+            <div class="resource">
+                <div class="resource-title">Cobre</div>
+                <div class="resource-value">7.2K</div>
+                <div class="resource-icon">⚙</div>
+            </div>
 
-                const cam = this.cameras.main;
-                this.isDragging = false;
-                this.camVelocity = { x: 0, y: 0 };
+            <div class="resource">
+                <div class="resource-title">Vapor</div>
+                <div class="resource-value">82%</div>
+                <div class="resource-icon">♨</div>
+            </div>
 
-                this.input.on('pointerdown', (pointer) => {
-                    if (this.isBuilding) return; 
-                    this.isDragging = true;
-                    this.camVelocity = { x: 0, y: 0 };
-                });
+        </div>
 
-                this.input.on('pointermove', (pointer) => {
-                    if (this.isDragging && !this.isBuilding) {
-                        cam.scrollX -= (pointer.position.x - pointer.prevPosition.x) / cam.zoom;
-                        cam.scrollY -= (pointer.position.y - pointer.prevPosition.y) / cam.zoom;
-                        this.camVelocity.x = (pointer.position.x - pointer.prevPosition.x) / cam.zoom;
-                        this.camVelocity.y = (pointer.position.y - pointer.prevPosition.y) / cam.zoom;
-                    }
+        <div class="hud-center">
 
-                    if (this.isBuilding && this.previewSprite) {
-                        const worldPoint = cam.getWorldPoint(pointer.x, pointer.y);
-                        const snapSize = 16;
-                        this.previewSprite.x = Math.round(worldPoint.x / snapSize) * snapSize;
-                        this.previewSprite.y = Math.round(worldPoint.y / snapSize) * snapSize;
-                        this.validatePlacement();
-                    }
-                });
+            <div class="resource">
+                <div class="resource-title">Temperatura</div>
+                <div class="resource-value">-38°C</div>
+                <div class="resource-icon">❄</div>
+            </div>
 
-                this.input.on('pointerup', () => { this.isDragging = false; });
+            <div class="resource">
+                <div class="resource-title">Moral</div>
+                <div class="resource-value">61%</div>
+                <div class="resource-icon">☩</div>
+            </div>
 
-                document.getElementById('game-container').addEventListener('wheel', (e) => {
-                    const zoomDir = e.deltaY > 0 ? -1 : 1;
-                    this.camConfig.zoomTarget = Phaser.Math.Clamp(
-                        this.camConfig.zoomTarget + (zoomDir * this.camConfig.zoomSpeed),
-                        this.camConfig.minZoom, this.camConfig.maxZoom
-                    );
-                });
+        </div>
 
-                this.input.on('pointerdown', (pointer) => {
-                    if (this.isBuilding && pointer.leftButtonDown()) {
-                        if (this.previewSprite.tintTopLeft === 0x00ff00) {
-                            this.placeBuilding();
-                        } else {
-                            Events.emit('COMBAT_LOG', { text: "❌ Terreno ocupado.", type: 'warning' });
-                        }
-                    }
-                });
+        <div class="hud-right">
 
-                Events.on('START_PLACEMENT', (buildingId) => {
-                    this.startPlacement(buildingId);
-                });
-            }
+            <div class="resource">
+                <div class="resource-title">Dia Imperial</div>
+                <div class="resource-value">XII</div>
+                <div class="resource-icon">⌛</div>
+            </div>
 
-            startPlacement(buildingId) {
-                if (this.previewSprite) this.previewSprite.destroy();
-                this.isBuilding = true;
-                this.currentBuildingType = buildingId;
-                
-                let textureKey = buildingId;
-                if (!this.textures.exists(textureKey)) textureKey = 'house';
+            <div class="resource">
+                <div class="resource-title">Clima</div>
+                <div class="resource-value">Nevasca</div>
+                <div class="resource-icon">☠</div>
+            </div>
 
-                // CORREÇÃO DE ESCALA: Força o holograma a ter 64x64 no mapa
-                this.previewSprite = this.add.sprite(0, 0, textureKey).setAlpha(0.6).setDepth(100);
-                this.previewSprite.setDisplaySize(64, 64);
-                this.physics.add.existing(this.previewSprite);
-            }
+        </div>
 
-            validatePlacement() {
-                let isOverlapping = false;
-                const bounds = this.previewSprite.getBounds();
-                this.buildingsGroup.children.iterate((building) => {
-                    if (Phaser.Geom.Intersects.RectangleToRectangle(bounds, building.getBounds())) {
-                        isOverlapping = true;
-                    }
-                });
-                this.previewSprite.setTint(isOverlapping ? 0xff0000 : 0x00ff00);
-            }
+    </header>
 
-            placeBuilding() {
-                Events.emit('CONFIRM_BUILD', this.currentBuildingType);
-                
-                // CORREÇÃO DE ESCALA: Cria o prédio e aplica as dimensões exatas na física e no sprite
-                const building = this.buildingsGroup.create(this.previewSprite.x, this.previewSprite.y, this.previewSprite.texture.key);
-                building.setDisplaySize(64, 64);
-                building.refreshBody(); // Essencial para atualizar a área de colisão após o redimensionamento
-                building.setOrigin(0.5);
-                building.setDepth(this.previewSprite.y); 
+    <!-- LEFT PANEL -->
 
-                this.cancelPlacement(); 
-            }
+    <aside class="panel" id="left-panel">
 
-            cancelPlacement() {
-                this.isBuilding = false;
-                if (this.previewSprite) {
-                    this.previewSprite.destroy();
-                    this.previewSprite = null;
-                }
-            }
+        <div class="panel-header">
+            <div class="panel-title">Arquitetura Imperial</div>
+            <div>⚙</div>
+        </div>
 
-            update() {
-                if (!this.isDragging) {
-                    this.cameras.main.scrollX -= this.camVelocity.x;
-                    this.cameras.main.scrollY -= this.camVelocity.y;
-                    this.camVelocity.x *= this.camConfig.drag;
-                    this.camVelocity.y *= this.camConfig.drag;
-                }
-                this.cameras.main.zoom = Phaser.Math.Linear(this.cameras.main.zoom, this.camConfig.zoomTarget, 0.1);
-            }
-        }
+        <div class="build-list">
 
-        const config = {
-            type: Phaser.WEBGL,
-            parent: 'game-container',
-            width: window.innerWidth,
-            height: window.innerHeight,
-            pixelArt: true,
-            transparent: true,
-            physics: { default: 'arcade', arcade: { debug: false } },
-            scene: CityBuilderScene
-        };
+            <div class="build-card" data-building="reactor">
 
-        window.addEventListener('resize', () => {
-            if (window.game) window.game.scale.resize(window.innerWidth, window.innerHeight);
-        });
+                <div class="build-name">
+                    Reator Carnis
+                </div>
 
-        // ==========================================
-        // 3. COLONY MANAGER (A Lógica)
-        // ==========================================
-        class ColonyManager {
-            constructor() {
-                this.resources = { biomass: 200, copper: 150, steam: 100, population: 30, defense: 10 };
-                this.day = 1;
-                this.dayTimer = 0;
+                <div class="build-desc">
+                    Núcleo biomecânico alimentado por biomassa fervente e pressão térmica.
+                </div>
 
-                this.buildings = [
-                    { id: 'house', name: 'Cabana', count: 1, costType: 'copper', costValue: 50, rate: 2 },
-                    { id: 'farm', name: 'Fazenda', count: 1, costType: 'copper', costValue: 40, rate: 6 },
-                    { id: 'incubator', name: 'Incubadora', count: 0, costType: 'copper', costValue: 100, rate: 18 },
-                    { id: 'extractor', name: 'Lenhador', count: 0, costType: 'biomass', costValue: 30, rate: 10 },
-                    { id: 'boiler', name: 'Caldeira', count: 1, costType: 'copper', costValue: 80, rate: 8 },
-                    { id: 'lab', name: 'Laboratório', count: 0, costType: 'copper', costValue: 120, rate: 15 },
-                    { id: 'wall', name: 'Muralha', count: 1, costType: 'copper', costValue: 60, rate: 20 },
-                    { id: 'tower', name: 'Torre Def.', count: 0, costType: 'biomass', costValue: 80, rate: 15 }
-                ];
-                
-                this.init();
-            }
+                <div class="build-meta">
+                    <div class="meta">+ Vapor</div>
+                    <div class="meta">+ Calor</div>
+                    <div class="meta">Risco Alto</div>
+                </div>
 
-            init() {
-                setInterval(() => this.simulationTick(), 2000);
-                
-                document.querySelectorAll('.build-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const buildingId = btn.getAttribute('data-building');
-                        this.requestBuild(buildingId);
-                    });
-                });
+            </div>
 
-                Events.on('CONFIRM_BUILD', (buildingId) => {
-                    this.executeBuild(buildingId);
-                });
-                
-                this.updateUI();
-            }
+            <div class="build-card" data-building="barracks">
 
-            requestBuild(buildingId) {
-                const b = this.buildings.find(item => item.id === buildingId);
-                if (!b) return;
+                <div class="build-name">
+                    Caserna Legionária
+                </div>
 
-                if (this.resources[b.costType] >= b.costValue) {
-                    Events.emit('START_PLACEMENT', buildingId);
-                    Events.emit('COMBAT_LOG', { text: `Posicionando ${b.name}...` });
-                } else {
-                    const costLabel = b.costType === 'copper' ? 'Madeira' : 'Comida';
-                    Events.emit('COMBAT_LOG', { text: `❌ Requer ${b.costValue} de ${costLabel}.`, type: 'warning' });
-                }
-            }
+                <div class="build-desc">
+                    Forma soldados congelados e máquinas romanas de contenção.
+                </div>
 
-            executeBuild(buildingId) {
-                const b = this.buildings.find(item => item.id === buildingId);
-                this.resources[b.costType] -= b.costValue;
-                b.count++;
-                
-                if (b.id === 'wall') this.resources.defense += b.rate;
-                if (b.id === 'house') this.resources.population += b.rate;
+                <div class="build-meta">
+                    <div class="meta">Militar</div>
+                    <div class="meta">Defesa</div>
+                    <div class="meta">Moral</div>
+                </div>
 
-                Events.emit('COMBAT_LOG', { text: `🛠️ ${b.name} finalizado!` });
-                this.updateUI();
-            }
+            </div>
 
-            simulationTick() {
-                this.dayTimer += 2;
-                if(this.dayTimer >= 20) {
-                    this.dayTimer = 0;
-                    this.advanceDay();
-                }
+            <div class="build-card" data-building="cult">
 
-                const b = (id) => this.buildings.find(i => i.id === id).count;
-                const bRate = (id) => this.buildings.find(i => i.id === id).rate;
+                <div class="build-name">
+                    Catedral de Carne
+                </div>
 
-                const steamGen = b('boiler') * bRate('boiler');
-                const foodGen = (b('farm') * bRate('farm')) + (b('incubator') * bRate('incubator')) + (b('lab') * bRate('lab'));
-                const woodGen = (b('extractor') * bRate('extractor')) + Math.floor(this.resources.population * 0.1);
+                <div class="build-desc">
+                    Estrutura ritualística que reduz o medo através de sacrifícios térmicos.
+                </div>
 
-                this.resources.steam = Math.min(100, Math.max(0, this.resources.steam - 10 + steamGen));
-                
-                if (this.resources.steam > 10) {
-                    this.resources.biomass += foodGen;
-                    this.resources.copper += woodGen;
-                }
+                <div class="build-meta">
+                    <div class="meta">Ocultismo</div>
+                    <div class="meta">Fanatismo</div>
+                    <div class="meta">Corrupção</div>
+                </div>
 
-                this.resources.biomass -= Math.floor(this.resources.population * 0.3);
+            </div>
 
-                if (this.resources.steam <= 0) {
-                    this.resources.population = Math.max(0, this.resources.population - 2);
-                    Events.emit('COMBAT_LOG', { text: "🚨 CONGELAMENTO!", type: 'critical' });
-                }
+        </div>
 
-                if (this.resources.biomass <= 0) {
-                    this.resources.biomass = 0;
-                    this.resources.population = Math.max(0, this.resources.population - 1);
-                    Events.emit('COMBAT_LOG', { text: "💀 FOME!", type: 'critical' });
-                }
+    </aside>
 
-                this.updateUI();
-            }
+    <!-- RIGHT PANEL -->
 
-            advanceDay() {
-                this.day++;
-                if (this.day % 10 === 0) {
-                    document.getElementById('combat-overlay').classList.remove('hidden');
-                    Events.emit('COMBAT_LOG', { text: "⚠️ A HORDA ESTÁ NOS PORTÕES!", type: 'critical' });
-                } else {
-                    document.getElementById('combat-overlay').classList.add('hidden');
-                }
-                this.updateUI();
-            }
+    <aside class="panel" id="right-panel">
 
-            updateUI() {
-                document.getElementById('res-food').innerText = Math.floor(this.resources.biomass);
-                document.getElementById('res-wood').innerText = Math.floor(this.resources.copper);
-                document.getElementById('res-population').innerText = this.resources.population;
-                document.getElementById('colony-steam').innerText = `${Math.floor(this.resources.steam)}%`;
-                document.getElementById('steam-meter').style.width = `${Math.floor(this.resources.steam)}%`;
-                document.getElementById('day-counter').innerText = `DIA ${this.day.toString().padStart(2, '0')}`;
-                
-                const daysLeft = 10 - (this.day % 10 === 0 ? 10 : this.day % 10);
-                document.getElementById('days-left').innerText = daysLeft;
-            }
-        }
+        <div class="panel-header">
+            <div class="panel-title">Cidade Imperial</div>
+            <div>☩</div>
+        </div>
 
-        window.onload = () => {
-            window.game = new Phaser.Game(config);
-            window.Colony = new ColonyManager();
-        };
-    </script>
+        <div class="city-stats">
+
+            <div class="stat">
+
+                <div class="stat-label">
+                    <span>Eficiência</span>
+                    <span>74%</span>
+                </div>
+
+                <div class="bar">
+                    <div class="bar-fill" style="width:74%;"></div>
+                </div>
+
+            </div>
+
+            <div class="stat">
+
+                <div class="stat-label">
+                    <span>Fome</span>
+                    <span>31%</span>
+                </div>
+
+                <div class="bar">
+                    <div class="bar-fill" style="width:31%;"></div>
+                </div>
+
+            </div>
+
+            <div class="stat">
+
+                <div class="stat-label">
+                    <span>Doenças</span>
+                    <span>44%</span>
+                </div>
+
+                <div class="bar">
+                    <div class="bar-fill" style="width:44%;"></div>
+                </div>
+
+            </div>
+
+            <div class="stat">
+
+                <div class="stat-label">
+                    <span>Corrupção</span>
+                    <span>66%</span>
+                </div>
+
+                <div class="bar">
+                    <div class="bar-fill" style="width:66%;"></div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+    <!-- EVENT LOG -->
+
+    <section id="event-log">
+
+        <div class="log">
+            <div class="log-time">03:12 IMPERIAL</div>
+            <div class="log-text">
+                A temperatura caiu abaixo do limite térmico aceitável.
+            </div>
+        </div>
+
+        <div class="log">
+            <div class="log-time">03:19 IMPERIAL</div>
+            <div class="log-text">
+                Cultistas biomecânicos detectados nos túneis externos.
+            </div>
+        </div>
+
+        <div class="log">
+            <div class="log-time">03:31 IMPERIAL</div>
+            <div class="log-text">
+                Vapor arterial excedeu o limite operacional.
+            </div>
+        </div>
+
+    </section>
+
+    <!-- MINIMAP -->
+
+    <div id="minimap">
+        <div id="minimap-scan"></div>
+    </div>
+
+    <!-- BUILD OVERLAY -->
+
+    <div id="build-overlay">
+
+        <div class="grid"></div>
+
+        <div id="placement"></div>
+
+    </div>
+
+    <!-- OVERLAYS -->
+
+    <div class="overlay active" id="cold-overlay"></div>
+    <div class="overlay" id="danger-overlay"></div>
+
+</div>
+
+<script>
+
+/* =========================================================
+   IMPERIUM CARNIS ENGINE
+========================================================= */
+
+const world = document.getElementById('world');
+const viewport = document.getElementById('world-viewport');
+
+let camera = {
+    x:-1600,
+    y:-1500,
+    zoom:1
+};
+
+let isDragging = false;
+
+let dragStart = {
+    x:0,
+    y:0
+};
+
+function updateCamera(){
+
+    world.style.transform =
+        `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})`;
+}
+
+updateCamera();
+
+/* =========================================================
+   DRAG CAMERA
+========================================================= */
+
+viewport.addEventListener('mousedown',(e)=>{
+
+    isDragging = true;
+
+    dragStart.x = e.clientX - camera.x;
+    dragStart.y = e.clientY - camera.y;
+});
+
+window.addEventListener('mouseup',()=>{
+
+    isDragging = false;
+});
+
+window.addEventListener('mousemove',(e)=>{
+
+    if(!isDragging) return;
+
+    camera.x = e.clientX - dragStart.x;
+    camera.y = e.clientY - dragStart.y;
+
+    updateCamera();
+});
+
+/* =========================================================
+   ZOOM
+========================================================= */
+
+viewport.addEventListener('wheel',(e)=>{
+
+    e.preventDefault();
+
+    const delta = e.deltaY * -0.001;
+
+    camera.zoom += delta;
+
+    camera.zoom = Math.max(.35, Math.min(2.5, camera.zoom));
+
+    updateCamera();
+});
+
+/* =========================================================
+   BUILD MODE
+========================================================= */
+
+const overlay = document.getElementById('build-overlay');
+const placement = document.getElementById('placement');
+
+document.querySelectorAll('.build-card').forEach(card=>{
+
+    card.addEventListener('click',()=>{
+
+        overlay.classList.toggle('active');
+    });
+});
+
+window.addEventListener('mousemove',(e)=>{
+
+    placement.style.left = `${e.clientX - 64}px`;
+    placement.style.top = `${e.clientY - 64}px`;
+});
+
+/* =========================================================
+   EVENT LOG
+========================================================= */
+
+const logContainer = document.getElementById('event-log');
+
+const messages = [
+
+    'Legionários biomecânicos chegaram da muralha norte.',
+    'Uma nevasca cobre as estruturas industriais.',
+    'O núcleo térmico entrou em estado crítico.',
+    'Os cultistas iniciaram o ritual da fornalha.',
+    'As ruas congeladas colapsaram sob o gelo.',
+    'Mutação detectada nas câmaras de biomassa.',
+    'A fome aumentou entre os trabalhadores.'
+];
+
+function createLog(){
+
+    const log = document.createElement('div');
+    log.className = 'log';
+
+    const t = new Date();
+
+    log.innerHTML = `
+        <div class="log-time">
+            ${t.getHours()}:${t.getMinutes().toString().padStart(2,'0')} IMPERIAL
+        </div>
+
+        <div class="log-text">
+            ${messages[Math.floor(Math.random()*messages.length)]}
+        </div>
+    `;
+
+    logContainer.prepend(log);
+
+    while(logContainer.children.length > 8){
+        logContainer.removeChild(logContainer.lastChild);
+    }
+}
+
+setInterval(createLog,5000);
+
+/* =========================================================
+   SNOW GENERATOR
+========================================================= */
+
+function createSnow(){
+
+    const snow = document.createElement('div');
+
+    snow.className = 'snow';
+
+    snow.style.left = Math.random()*window.innerWidth + 'px';
+
+    const size = Math.random()*3;
+
+    snow.style.width = size + 'px';
+    snow.style.height = size + 'px';
+
+    snow.style.animationDuration =
+        (5 + Math.random()*10) + 's';
+
+    snow.style.opacity = Math.random();
+
+    document.body.appendChild(snow);
+
+    setTimeout(()=>{
+        snow.remove();
+    },15000);
+}
+
+setInterval(createSnow,40);
+
+/* =========================================================
+   DANGER OVERLAY
+========================================================= */
+
+setInterval(()=>{
+
+    const danger = document.getElementById('danger-overlay');
+
+    danger.classList.add('active');
+
+    setTimeout(()=>{
+        danger.classList.remove('active');
+    },1200);
+
+},14000);
+
+/* =========================================================
+   CINEMATIC CAMERA DRIFT
+========================================================= */
+
+setInterval(()=>{
+
+    camera.x += (Math.random()*10)-5;
+    camera.y += (Math.random()*10)-5;
+
+    updateCamera();
+
+},2000);
+
+/* =========================================================
+   PERFORMANCE
+========================================================= */
+
+document.body.style.transform = 'translateZ(0)';
+
+</script>
+
 </body>
 </html>
