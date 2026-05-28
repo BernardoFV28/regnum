@@ -3,180 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Feudo Brutal - AAA Engine</title>
+    <title>Império Biomecânico AAA</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
 
     <style>
         body {
-            background-color: #09090b; 
+            background-color: #050508; 
             color: #d4d4d8; 
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
             overflow: hidden;
             margin: 0;
             padding: 0;
+            user-select: none;
+        }
+
+        /* O Canvas do WebGL fica no fundo */
+        #game-container {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 0;
+        }
+
+        /* Camada de Interface Intocável pelo WebGL */
+        #ui-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: space-between;
+            pointer-events: none; /* Deixa o mouse vazar para o jogo */
+            z-index: 10;
+        }
+
+        /* Painéis interativos */
+        header, footer, .interactive-panel {
+            pointer-events: auto; 
         }
 
         .panel-dark-wood {
-            background-color: #121214;
-            border-top: 2px solid #27272a;
+            background: linear-gradient(180deg, #18181b 0%, #09090b 100%);
+            border-top: 2px solid #3f3f46;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
         }
 
         .action-iron {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 0.5rem;
-            background-color: #18181b;
-            border: 1px solid #3f3f46;
-            color: #a1a1aa;
-            text-transform: uppercase;
-            font-size: 0.70rem;
-            font-weight: bold;
-            letter-spacing: 0.05em;
-            transition: all 0.1s ease-in-out;
-            width: 100%;
-            min-height: 80px;
-            cursor: pointer;
-            pointer-events: auto;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 0.5rem; padding: 0.5rem;
+            background-color: #121214; border: 1px solid #3f3f46;
+            color: #a1a1aa; text-transform: uppercase; font-size: 0.70rem; font-weight: bold;
+            transition: all 0.1s ease; width: 100%; min-height: 80px; cursor: pointer;
+            position: relative; overflow: hidden;
         }
 
         .action-iron:hover {
-            background-image: url('assets/iron_button_hover.png');
-            background-size: cover;
-            background-position: center;
-            color: #f4f4f5;
-            border-color: #71717a;
-            transform: translateY(-2px);
+            background-color: #27272a; border-color: #a1a1aa; color: #fff;
+            transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.5);
         }
 
-        .action-iron:active {
-            background-image: url('assets/iron_button_active.png');
-            background-size: cover;
-            background-position: center;
-            transform: translateY(1px);
-        }
+        .action-iron:active { transform: translateY(1px); }
 
         .icon-large { width: 32px; height: 32px; image-rendering: pixelated; object-fit: contain; }
         .icon-small { width: 18px; height: 18px; image-rendering: pixelated; object-fit: contain; }
 
-        #game-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 0;
-        }
-
-        #ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            pointer-events: none;
-            z-index: 10;
-        }
-        
-        header, footer, #combat-log, #combat-overlay {
-            pointer-events: auto; 
+        /* Vinheta Cinematográfica Dinâmica */
+        #vignette {
+            position: absolute; inset: 0; pointer-events: none; z-index: 5;
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.9);
+            transition: box-shadow 0.5s ease;
         }
     </style>
 </head>
 <body>
 
     <div id="game-container"></div>
+    <div id="vignette"></div>
 
     <div id="ui-layer">
-        <header class="bg-zinc-900/90 border-b border-zinc-800 p-2 shadow-lg backdrop-blur-sm">
-            <div class="max-w-6xl mx-auto flex justify-between items-center text-sm">
-                <div class="flex gap-4 md:gap-6">
-                    <div class="flex items-center gap-2 bg-black/50 px-3 py-1 rounded border border-zinc-800">
-                        <img src="assets/food.png" alt="Comida" class="icon-small">
-                        <span id="res-food" class="font-bold text-amber-500">200</span>
+        
+        <header class="bg-zinc-950/90 border-b border-red-900/30 p-3 shadow-lg backdrop-blur-md interactive-panel">
+            <div class="max-w-7xl mx-auto flex justify-between items-center text-sm">
+                
+                <div class="flex gap-4">
+                    <div class="flex items-center gap-2 bg-black/60 px-4 py-1.5 rounded border border-zinc-800">
+                        <img src="assets/food.png" class="icon-small">
+                        <span id="res-biomass" class="font-bold text-emerald-500 tracking-wider">300</span>
                     </div>
-                    <div class="flex items-center gap-2 bg-black/50 px-3 py-1 rounded border border-zinc-800">
-                        <img src="assets/wood.png" alt="Madeira" class="icon-small">
-                        <span id="res-wood" class="font-bold text-orange-400">150</span>
+                    <div class="flex items-center gap-2 bg-black/60 px-4 py-1.5 rounded border border-zinc-800">
+                        <img src="assets/wood.png" class="icon-small">
+                        <span id="res-copper" class="font-bold text-amber-600 tracking-wider">150</span>
                     </div>
-                    <div class="flex items-center gap-2 bg-black/50 px-3 py-1 rounded border border-zinc-800">
-                        <span class="text-zinc-500">👥 Pop:</span>
-                        <span id="res-population" class="font-bold text-zinc-100">30</span>
+                    <div class="flex items-center gap-2 bg-black/60 px-4 py-1.5 rounded border border-zinc-800">
+                        <span class="text-zinc-500 font-bold">VAPOR:</span>
+                        <span id="res-steam" class="font-bold text-orange-500 tracking-wider">100%</span>
                     </div>
                 </div>
+
                 <div class="flex items-center gap-6">
                     <div class="text-right">
-                        <div id="day-counter" class="text-zinc-300 font-bold tracking-widest">DIA 01</div>
-                        <div class="text-[10px] text-red-500">Cerco em: <span id="days-left" class="font-bold">10</span> dias</div>
-                    </div>
-                    <div class="w-24 md:w-32 bg-black/50 p-1 rounded border border-zinc-800">
-                        <div class="flex justify-between text-[10px] mb-1">
-                            <span id="colony-temp">🔥 ESTÁVEL</span>
-                            <span id="colony-steam">100%</span>
-                        </div>
-                        <div class="w-full bg-zinc-900 h-2 rounded overflow-hidden">
-                            <div id="steam-meter" class="bg-orange-600 h-full w-full transition-all duration-500"></div>
-                        </div>
+                        <div id="weather-status" class="text-xs text-zinc-400 font-bold tracking-widest uppercase">Atmosfera Calma</div>
+                        <div id="day-counter" class="text-red-500 font-black tracking-[0.2em] text-lg">CICLO 01</div>
                     </div>
                 </div>
+
             </div>
         </header>
 
         <main class="flex-1 relative p-4 pointer-events-none">
-            <div id="combat-overlay" class="hidden absolute top-10 left-1/2 -translate-x-1/2 bg-red-950/90 border-2 border-red-600 text-red-200 px-8 py-3 shadow-[0_0_30px_rgba(220,38,38,0.5)] text-center">
-                <h2 class="text-xl font-bold tracking-widest animate-pulse">⚔️ A HORDA ATACOU ⚔️</h2>
-                <p class="text-xs mt-1 text-red-400">Defesas sob pressão máxima!</p>
-            </div>
-            <div class="absolute bottom-4 left-4 w-80 h-48 bg-black/80 border border-zinc-800 p-3 overflow-y-auto flex flex-col-reverse text-xs text-zinc-400" id="combat-log">
-                <div><span class="text-zinc-600">SISTEMA:</span> Motor WebGL inicializado. Use o scroll para Zoom.</div>
+            <div class="absolute bottom-4 left-4 w-96 h-56 bg-zinc-950/90 border border-zinc-800 p-4 overflow-y-auto flex flex-col-reverse text-[11px] text-zinc-400 font-mono interactive-panel shadow-2xl" id="combat-log">
+                <div><span class="text-orange-500 font-bold">[CORE]</span> Inicialização do motor WebGL AAA concluída.</div>
             </div>
         </main>
 
-        <footer class="panel-dark-wood p-3">
-            <div class="max-w-6xl mx-auto grid grid-cols-4 md:grid-cols-8 gap-2">
+        <footer class="panel-dark-wood p-3 interactive-panel">
+            <div class="max-w-5xl mx-auto grid grid-cols-4 md:grid-cols-6 gap-3">
                 <button class="build-btn action-iron" data-building="house">
-                    <img src="assets/house.png" alt="Cabana" class="icon-large">
-                    <span>Cabana</span>
-                    <span class="text-[9px] text-orange-400 font-normal">50 Mad.</span>
+                    <img src="assets/house.png" class="icon-large">
+                    <span>Cabana Óssea</span>
+                    <span class="text-[9px] text-amber-600">50 Cobre</span>
                 </button>
                 <button class="build-btn action-iron" data-building="farm">
-                    <img src="assets/farm.png" alt="Fazenda" class="icon-large">
-                    <span>Fazenda</span>
-                    <span class="text-[9px] text-orange-400 font-normal">40 Mad.</span>
-                </button>
-                <button class="build-btn action-iron" data-building="incubator">
-                    <img src="assets/food.png" alt="Incubadora" class="icon-large">
-                    <span>Incubadora</span>
-                    <span class="text-[9px] text-orange-400 font-normal">100 Mad.</span>
-                </button>
-                <button class="build-btn action-iron" data-building="extractor">
-                    <img src="assets/wood.png" alt="Lenhador" class="icon-large">
-                    <span>Lenhador</span>
-                    <span class="text-[9px] text-amber-500 font-normal">30 Com.</span>
-                </button>
-                <button class="build-btn action-iron" data-building="boiler">
-                    <span>Caldeira</span>
-                    <span class="text-[9px] text-orange-400 font-normal">80 Mad.</span>
-                </button>
-                <button class="build-btn action-iron" data-building="lab">
-                    <span>Laboratório</span>
-                    <span class="text-[9px] text-orange-400 font-normal">120 Mad.</span>
+                    <img src="assets/farm.png" class="icon-large">
+                    <span>Cultivo de Carne</span>
+                    <span class="text-[9px] text-amber-600">40 Cobre</span>
                 </button>
                 <button class="build-btn action-iron" data-building="wall">
-                    <img src="assets/wall.png" alt="Muralha" class="icon-large">
-                    <span>Muralha</span>
-                    <span class="text-[9px] text-orange-400 font-normal">60 Mad.</span>
+                    <img src="assets/wall.png" class="icon-large">
+                    <span>Paliçada</span>
+                    <span class="text-[9px] text-amber-600">60 Cobre</span>
                 </button>
-                <button class="build-btn action-iron" data-building="tower">
-                    <span>Torre Def.</span>
-                    <span class="text-[9px] text-amber-500 font-normal">80 Com.</span>
+                <button class="build-btn action-iron" data-building="incubator">
+                    <img src="assets/food.png" class="icon-large">
+                    <span>Incubadora</span>
+                    <span class="text-[9px] text-amber-600">100 Cobre</span>
                 </button>
             </div>
         </footer>
@@ -184,90 +142,109 @@
 
     <script>
         // ==========================================
-        // 1. SISTEMA DE EVENTOS GLOBAIS
+        // 1. BARRAMENTO DE EVENTOS (EventBus)
         // ==========================================
         window.Events = {
             listeners: {},
-            on: function(event, callback) {
+            on(event, callback) {
                 if (!this.listeners[event]) this.listeners[event] = [];
                 this.listeners[event].push(callback);
             },
-            emit: function(event, data) {
-                if (this.listeners[event]) {
-                    this.listeners[event].forEach(callback => callback(data));
-                }
+            emit(event, data) {
+                if (this.listeners[event]) this.listeners[event].forEach(cb => cb(data));
             }
         };
 
-        Events.on('COMBAT_LOG', (data) => {
+        Events.on('LOG', (data) => {
             const logBox = document.getElementById('combat-log');
             if (!logBox) return;
-            let colorClass = 'text-zinc-300';
-            if (data.type === 'critical') colorClass = 'text-red-500 font-bold';
-            if (data.type === 'warning') colorClass = 'text-amber-500';
+            let color = data.type === 'critical' ? 'text-red-500 font-bold' : 'text-zinc-300';
             const entry = document.createElement('div');
-            entry.className = `mb-1 ${colorClass}`;
+            entry.className = `mb-1.5 ${color}`;
             entry.innerHTML = `> ${data.text}`;
             logBox.prepend(entry);
-            if (logBox.children.length > 20) logBox.removeChild(logBox.lastChild);
+            if (logBox.children.length > 25) logBox.removeChild(logBox.lastChild);
         });
 
         // ==========================================
-        // 2. PHASER 3 ENGINE (Câmera e Grid)
+        // 2. ENGINE WEBGL (PHASER 3) - O MAPA VIVO
         // ==========================================
-        class CityBuilderScene extends Phaser.Scene {
+        class EmpireScene extends Phaser.Scene {
             constructor() {
-                super({ key: 'CityBuilderScene' });
+                super({ key: 'EmpireScene' });
                 this.isBuilding = false;
-                this.currentBuildingType = null;
                 this.previewSprite = null;
+                this.buildings = []; // Array de entidades de construção
                 
+                // Configurações de Câmera Cinematográfica
                 this.camConfig = {
-                    drag: 0.85, zoomTarget: 1, zoomSpeed: 0.1, minZoom: 0.3, maxZoom: 2.5
+                    drag: 0.85, zoomTarget: 1, zoomSpeed: 0.15, minZoom: 0.2, maxZoom: 2.5
                 };
             }
 
             preload() {
+                // Carregamento AAA Estrito
                 this.load.image('house', 'assets/house.png');
                 this.load.image('farm', 'assets/farm.png');
                 this.load.image('wall', 'assets/wall.png');
                 this.load.image('incubator', 'assets/food.png');
-                this.load.image('extractor', 'assets/wood.png');
+                
+                // Textura procedural para fumaça/partículas gerada em memória
+                const graphics = this.make.graphics({x: 0, y: 0, add: false});
+                graphics.fillStyle(0xffffff, 1);
+                graphics.fillCircle(4, 4, 4);
+                graphics.generateTexture('particle', 8, 8);
             }
 
             create() {
-                this.cameras.main.setBackgroundColor('#101014');
-                this.buildingsGroup = this.physics.add.staticGroup();
+                // Fundo Biomecânico/Congelado
+                this.cameras.main.setBackgroundColor('#101216');
+                
+                // Grupos Otimizados
+                this.buildingsGroup = this.add.group();
+                this.roadsGraphics = this.add.graphics(); // Camada de estradas orgânicas
+                this.roadsGraphics.setDepth(0);
 
+                this.setupCinematicCamera();
+                this.setupBuildSystem();
+
+                // Integração com HUD
+                Events.on('START_PLACEMENT', (id) => this.startPlacement(id));
+            }
+
+            setupCinematicCamera() {
                 const cam = this.cameras.main;
                 this.isDragging = false;
                 this.camVelocity = { x: 0, y: 0 };
 
                 this.input.on('pointerdown', (pointer) => {
-                    if (this.isBuilding) return; 
+                    if (this.isBuilding || pointer.button !== 0) return; 
                     this.isDragging = true;
                     this.camVelocity = { x: 0, y: 0 };
                 });
 
                 this.input.on('pointermove', (pointer) => {
-                    if (this.isDragging && !this.isBuilding) {
-                        cam.scrollX -= (pointer.position.x - pointer.prevPosition.x) / cam.zoom;
-                        cam.scrollY -= (pointer.position.y - pointer.prevPosition.y) / cam.zoom;
-                        this.camVelocity.x = (pointer.position.x - pointer.prevPosition.x) / cam.zoom;
-                        this.camVelocity.y = (pointer.position.y - pointer.prevPosition.y) / cam.zoom;
+                    if (this.isDragging) {
+                        // Edge Scrolling & Drag
+                        cam.scrollX -= (pointer.x - pointer.prevPosition.x) / cam.zoom;
+                        cam.scrollY -= (pointer.y - pointer.prevPosition.y) / cam.zoom;
+                        this.camVelocity.x = (pointer.x - pointer.prevPosition.x) / cam.zoom;
+                        this.camVelocity.y = (pointer.y - pointer.prevPosition.y) / cam.zoom;
                     }
 
                     if (this.isBuilding && this.previewSprite) {
                         const worldPoint = cam.getWorldPoint(pointer.x, pointer.y);
-                        const snapSize = 16;
-                        this.previewSprite.x = Math.round(worldPoint.x / snapSize) * snapSize;
-                        this.previewSprite.y = Math.round(worldPoint.y / snapSize) * snapSize;
+                        // Grid invisível e inteligente (snapping a 16px para alinhamento orgânico)
+                        const snap = 16;
+                        this.previewSprite.x = Math.round(worldPoint.x / snap) * snap;
+                        this.previewSprite.y = Math.round(worldPoint.y / snap) * snap;
                         this.validatePlacement();
                     }
                 });
 
-                this.input.on('pointerup', () => { this.isDragging = false; });
+                this.input.on('pointerup', () => this.isDragging = false);
 
+                // Zoom Suave (Mouse Wheel)
                 document.getElementById('game-container').addEventListener('wheel', (e) => {
                     const zoomDir = e.deltaY > 0 ? -1 : 1;
                     this.camConfig.zoomTarget = Phaser.Math.Clamp(
@@ -275,58 +252,119 @@
                         this.camConfig.minZoom, this.camConfig.maxZoom
                     );
                 });
+            }
 
+            setupBuildSystem() {
                 this.input.on('pointerdown', (pointer) => {
-                    if (this.isBuilding && pointer.leftButtonDown()) {
-                        if (this.previewSprite.tintTopLeft === 0x00ff00) {
+                    // Clique Esquerdo: Constrói
+                    if (this.isBuilding && pointer.button === 0) {
+                        if (this.previewSprite.tintTopLeft === 0x00ffaa) {
                             this.placeBuilding();
                         } else {
-                            Events.emit('COMBAT_LOG', { text: "❌ Terreno ocupado.", type: 'warning' });
+                            Events.emit('LOG', { text: "Terreno bloqueado ou corrompido.", type: 'critical' });
+                            this.cameras.main.shake(100, 0.002); // Feedback de erro
                         }
+                    }
+                    // Clique Direito: Cancela
+                    if (this.isBuilding && pointer.button === 2) {
+                        this.cancelPlacement();
                     }
                 });
 
-                Events.on('START_PLACEMENT', (buildingId) => {
-                    this.startPlacement(buildingId);
-                });
+                // Previne menu de contexto ao clicar com botão direito
+                this.input.mouse.disableContextMenu();
             }
 
             startPlacement(buildingId) {
                 if (this.previewSprite) this.previewSprite.destroy();
                 this.isBuilding = true;
-                this.currentBuildingType = buildingId;
+                this.currentType = buildingId;
                 
-                let textureKey = buildingId;
-                if (!this.textures.exists(textureKey)) textureKey = 'house';
-
-                // CORREÇÃO DE ESCALA: Força o holograma a ter 64x64 no mapa
-                this.previewSprite = this.add.sprite(0, 0, textureKey).setAlpha(0.6).setDepth(100);
+                let key = this.textures.exists(buildingId) ? buildingId : 'house';
+                this.previewSprite = this.add.sprite(0, 0, key).setAlpha(0.6).setDepth(999);
                 this.previewSprite.setDisplaySize(64, 64);
-                this.physics.add.existing(this.previewSprite);
             }
 
             validatePlacement() {
-                let isOverlapping = false;
-                const bounds = this.previewSprite.getBounds();
-                this.buildingsGroup.children.iterate((building) => {
-                    if (Phaser.Geom.Intersects.RectangleToRectangle(bounds, building.getBounds())) {
-                        isOverlapping = true;
+                let overlap = false;
+                const rectA = this.previewSprite.getBounds();
+                
+                // Checagem de Colisão Otimizada
+                const buildings = this.buildingsGroup.getChildren();
+                for (let i = 0; i < buildings.length; i++) {
+                    if (Phaser.Geom.Intersects.RectangleToRectangle(rectA, buildings[i].getBounds())) {
+                        overlap = true; break;
                     }
-                });
-                this.previewSprite.setTint(isOverlapping ? 0xff0000 : 0x00ff00);
+                }
+                
+                // Verde Tecnológico (Válido) | Vermelho Sangue (Inválido)
+                this.previewSprite.setTint(overlap ? 0xff0000 : 0x00ffaa);
             }
 
             placeBuilding() {
-                Events.emit('CONFIRM_BUILD', this.currentBuildingType);
+                Events.emit('CONFIRM_BUILD', this.currentType);
                 
-                // CORREÇÃO DE ESCALA: Cria o prédio e aplica as dimensões exatas na física e no sprite
-                const building = this.buildingsGroup.create(this.previewSprite.x, this.previewSprite.y, this.previewSprite.texture.key);
-                building.setDisplaySize(64, 64);
-                building.refreshBody(); // Essencial para atualizar a área de colisão após o redimensionamento
-                building.setOrigin(0.5);
-                building.setDepth(this.previewSprite.y); 
+                const x = this.previewSprite.x;
+                const y = this.previewSprite.y;
+                const key = this.previewSprite.texture.key;
 
-                this.cancelPlacement(); 
+                const building = this.add.sprite(x, y, key);
+                building.setDisplaySize(64, 64);
+                building.setDepth(y); // Pseudo-3D Y-Sorting
+                this.buildingsGroup.add(building);
+                this.buildings.push({ x, y, type: this.currentType });
+
+                // GERAÇÃO ORGÂNICA DE ESTRADAS
+                this.generateOrganicConnections(x, y);
+
+                // GAME FEEL: Efeito Visual e Câmera
+                this.cameras.main.shake(150, 0.004);
+                this.emitConstructionSmoke(x, y);
+
+                this.cancelPlacement();
+            }
+
+            generateOrganicConnections(newX, newY) {
+                // Encontra o prédio mais próximo para conectar uma estrada
+                if (this.buildings.length < 2) return;
+
+                let nearest = null;
+                let minDist = Infinity;
+
+                for (let i = 0; i < this.buildings.length - 1; i++) {
+                    const b = this.buildings[i];
+                    const dist = Phaser.Math.Distance.Between(newX, newY, b.x, b.y);
+                    if (dist < minDist && dist < 400) { // Conecta apenas se estiver a até 400px
+                        minDist = dist;
+                        nearest = b;
+                    }
+                }
+
+                if (nearest) {
+                    this.roadsGraphics.lineStyle(8, 0x1a1210, 0.8); // Estrada de barro/carne
+                    this.roadsGraphics.beginPath();
+                    this.roadsGraphics.moveTo(newX, newY);
+                    
+                    // Curva Bézier para parecer orgânico e não uma linha reta de computador
+                    const midX = (newX + nearest.x) / 2 + (Math.random() * 40 - 20);
+                    const midY = (newY + nearest.y) / 2 + (Math.random() * 40 - 20);
+                    
+                    this.roadsGraphics.quadraticCurveTo(midX, midY, nearest.x, nearest.y);
+                    this.roadsGraphics.strokePath();
+                }
+            }
+
+            emitConstructionSmoke(x, y) {
+                const emitter = this.add.particles(x, y + 20, 'particle', {
+                    speed: { min: 20, max: 60 },
+                    angle: { min: 240, max: 300 },
+                    scale: { start: 1, end: 0 },
+                    alpha: { start: 0.5, end: 0 },
+                    tint: 0x444444,
+                    lifespan: 2000,
+                    gravityY: -50
+                });
+                emitter.explode(20);
             }
 
             cancelPlacement() {
@@ -337,160 +375,116 @@
                 }
             }
 
-            update() {
+            update(time, delta) {
+                // Câmera Damping
                 if (!this.isDragging) {
                     this.cameras.main.scrollX -= this.camVelocity.x;
                     this.cameras.main.scrollY -= this.camVelocity.y;
                     this.camVelocity.x *= this.camConfig.drag;
                     this.camVelocity.y *= this.camConfig.drag;
                 }
+                
+                // Câmera Zoom Lerp
                 this.cameras.main.zoom = Phaser.Math.Linear(this.cameras.main.zoom, this.camConfig.zoomTarget, 0.1);
             }
         }
 
-        const config = {
-            type: Phaser.WEBGL,
-            parent: 'game-container',
-            width: window.innerWidth,
-            height: window.innerHeight,
-            pixelArt: true,
-            transparent: true,
-            physics: { default: 'arcade', arcade: { debug: false } },
-            scene: CityBuilderScene
-        };
-
-        window.addEventListener('resize', () => {
-            if (window.game) window.game.scale.resize(window.innerWidth, window.innerHeight);
-        });
-
         // ==========================================
-        // 3. COLONY MANAGER (A Lógica)
+        // 3. LÓGICA DE SISTEMA (ColonyManager)
         // ==========================================
         class ColonyManager {
             constructor() {
-                this.resources = { biomass: 200, copper: 150, steam: 100, population: 30, defense: 10 };
+                this.resources = { biomass: 200, copper: 150, steam: 100 };
                 this.day = 1;
-                this.dayTimer = 0;
+                this.tickTimer = 0;
 
-                this.buildings = [
-                    { id: 'house', name: 'Cabana', count: 1, costType: 'copper', costValue: 50, rate: 2 },
-                    { id: 'farm', name: 'Fazenda', count: 1, costType: 'copper', costValue: 40, rate: 6 },
-                    { id: 'incubator', name: 'Incubadora', count: 0, costType: 'copper', costValue: 100, rate: 18 },
-                    { id: 'extractor', name: 'Lenhador', count: 0, costType: 'biomass', costValue: 30, rate: 10 },
-                    { id: 'boiler', name: 'Caldeira', count: 1, costType: 'copper', costValue: 80, rate: 8 },
-                    { id: 'lab', name: 'Laboratório', count: 0, costType: 'copper', costValue: 120, rate: 15 },
-                    { id: 'wall', name: 'Muralha', count: 1, costType: 'copper', costValue: 60, rate: 20 },
-                    { id: 'tower', name: 'Torre Def.', count: 0, costType: 'biomass', costValue: 80, rate: 15 }
-                ];
+                this.catalog = {
+                    'house': { name: 'Cabana Óssea', cost: 50, rate: 0 },
+                    'farm': { name: 'Cultivo', cost: 40, rate: 5 },
+                    'wall': { name: 'Paliçada', cost: 60, rate: 0 },
+                    'incubator': { name: 'Incubadora', cost: 100, rate: 15 }
+                };
                 
                 this.init();
             }
 
             init() {
-                setInterval(() => this.simulationTick(), 2000);
-                
+                // Ciclo Fixo de Simulação
+                setInterval(() => this.simulationTick(), 1000);
+
+                // Botões de UI HTML chamam a Engine WebGL
                 document.querySelectorAll('.build-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
-                        const buildingId = btn.getAttribute('data-building');
-                        this.requestBuild(buildingId);
+                        const id = btn.getAttribute('data-building');
+                        const cost = this.catalog[id].cost;
+                        
+                        if (this.resources.copper >= cost) {
+                            Events.emit('START_PLACEMENT', id);
+                        } else {
+                            Events.emit('LOG', { text: `Recursos insuficientes para ${this.catalog[id].name}.`, type: 'critical' });
+                        }
                     });
                 });
 
-                Events.on('CONFIRM_BUILD', (buildingId) => {
-                    this.executeBuild(buildingId);
+                // Confirmação de Construção (Debita os recursos reais)
+                Events.on('CONFIRM_BUILD', (id) => {
+                    this.resources.copper -= this.catalog[id].cost;
+                    Events.emit('LOG', { text: `[CONSTRUÇÃO] ${this.catalog[id].name} enraizada com sucesso.` });
+                    this.updateUI();
                 });
-                
-                this.updateUI();
-            }
-
-            requestBuild(buildingId) {
-                const b = this.buildings.find(item => item.id === buildingId);
-                if (!b) return;
-
-                if (this.resources[b.costType] >= b.costValue) {
-                    Events.emit('START_PLACEMENT', buildingId);
-                    Events.emit('COMBAT_LOG', { text: `Posicionando ${b.name}...` });
-                } else {
-                    const costLabel = b.costType === 'copper' ? 'Madeira' : 'Comida';
-                    Events.emit('COMBAT_LOG', { text: `❌ Requer ${b.costValue} de ${costLabel}.`, type: 'warning' });
-                }
-            }
-
-            executeBuild(buildingId) {
-                const b = this.buildings.find(item => item.id === buildingId);
-                this.resources[b.costType] -= b.costValue;
-                b.count++;
-                
-                if (b.id === 'wall') this.resources.defense += b.rate;
-                if (b.id === 'house') this.resources.population += b.rate;
-
-                Events.emit('COMBAT_LOG', { text: `🛠️ ${b.name} finalizado!` });
-                this.updateUI();
             }
 
             simulationTick() {
-                this.dayTimer += 2;
-                if(this.dayTimer >= 20) {
-                    this.dayTimer = 0;
-                    this.advanceDay();
-                }
-
-                const b = (id) => this.buildings.find(i => i.id === id).count;
-                const bRate = (id) => this.buildings.find(i => i.id === id).rate;
-
-                const steamGen = b('boiler') * bRate('boiler');
-                const foodGen = (b('farm') * bRate('farm')) + (b('incubator') * bRate('incubator')) + (b('lab') * bRate('lab'));
-                const woodGen = (b('extractor') * bRate('extractor')) + Math.floor(this.resources.population * 0.1);
-
-                this.resources.steam = Math.min(100, Math.max(0, this.resources.steam - 10 + steamGen));
+                this.tickTimer++;
                 
-                if (this.resources.steam > 10) {
-                    this.resources.biomass += foodGen;
-                    this.resources.copper += woodGen;
+                // Avanço de Dias
+                if(this.tickTimer >= 10) {
+                    this.day++;
+                    this.tickTimer = 0;
+                    document.getElementById('day-counter').innerText = `CICLO ${this.day.toString().padStart(2, '0')}`;
+                    
+                    if(this.day % 5 === 0) {
+                        Events.emit('LOG', { text: "Tempestade de Cinzas se aproximando...", type: 'warning' });
+                        document.getElementById('vignette').style.boxShadow = "inset 0 0 250px rgba(100,0,0,0.9)";
+                        setTimeout(() => { document.getElementById('vignette').style.boxShadow = "inset 0 0 150px rgba(0,0,0,0.9)"; }, 4000);
+                    }
                 }
 
-                this.resources.biomass -= Math.floor(this.resources.population * 0.3);
-
-                if (this.resources.steam <= 0) {
-                    this.resources.population = Math.max(0, this.resources.population - 2);
-                    Events.emit('COMBAT_LOG', { text: "🚨 CONGELAMENTO!", type: 'critical' });
-                }
-
-                if (this.resources.biomass <= 0) {
-                    this.resources.biomass = 0;
-                    this.resources.population = Math.max(0, this.resources.population - 1);
-                    Events.emit('COMBAT_LOG', { text: "💀 FOME!", type: 'critical' });
-                }
-
-                this.updateUI();
-            }
-
-            advanceDay() {
-                this.day++;
-                if (this.day % 10 === 0) {
-                    document.getElementById('combat-overlay').classList.remove('hidden');
-                    Events.emit('COMBAT_LOG', { text: "⚠️ A HORDA ESTÁ NOS PORTÕES!", type: 'critical' });
-                } else {
-                    document.getElementById('combat-overlay').classList.add('hidden');
-                }
+                // Dreno térmico
+                this.resources.steam = Math.max(0, this.resources.steam - 1);
+                
                 this.updateUI();
             }
 
             updateUI() {
-                document.getElementById('res-food').innerText = Math.floor(this.resources.biomass);
-                document.getElementById('res-wood').innerText = Math.floor(this.resources.copper);
-                document.getElementById('res-population').innerText = this.resources.population;
-                document.getElementById('colony-steam').innerText = `${Math.floor(this.resources.steam)}%`;
-                document.getElementById('steam-meter').style.width = `${Math.floor(this.resources.steam)}%`;
-                document.getElementById('day-counter').innerText = `DIA ${this.day.toString().padStart(2, '0')}`;
-                
-                const daysLeft = 10 - (this.day % 10 === 0 ? 10 : this.day % 10);
-                document.getElementById('days-left').innerText = daysLeft;
+                document.getElementById('res-biomass').innerText = Math.floor(this.resources.biomass);
+                document.getElementById('res-copper').innerText = Math.floor(this.resources.copper);
+                document.getElementById('res-steam').innerText = `${this.resources.steam}%`;
             }
         }
 
+        // ==========================================
+        // 4. BOOTSTRAP DO SISTEMA
+        // ==========================================
         window.onload = () => {
+            // Inicializa Motor WebGL
+            const config = {
+                type: Phaser.WEBGL,
+                parent: 'game-container',
+                width: window.innerWidth,
+                height: window.innerHeight,
+                pixelArt: true,
+                backgroundColor: '#000000',
+                scene: EmpireScene
+            };
             window.game = new Phaser.Game(config);
+
+            // Redimensionamento Dinâmico
+            window.addEventListener('resize', () => {
+                if (window.game) window.game.scale.resize(window.innerWidth, window.innerHeight);
+            });
+
+            // Inicializa Gestor de Lógica
             window.Colony = new ColonyManager();
         };
     </script>
