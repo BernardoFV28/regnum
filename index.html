@@ -1,492 +1,84 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Império Biomecânico AAA</title>
-    
+    <title>Feudo Brutal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
-
     <style>
-        body {
-            background-color: #050508; 
-            color: #d4d4d8; 
-            font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-            overflow: hidden;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-        }
-
-        /* O Canvas do WebGL fica no fundo */
-        #game-container {
-            position: absolute;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            z-index: 0;
-        }
-
-        /* Camada de Interface Intocável pelo WebGL */
-        #ui-layer {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; flex-direction: column; justify-content: space-between;
-            pointer-events: none; /* Deixa o mouse vazar para o jogo */
-            z-index: 10;
-        }
-
-        /* Painéis interativos */
-        header, footer, .interactive-panel {
-            pointer-events: auto; 
-        }
-
-        .panel-dark-wood {
-            background: linear-gradient(180deg, #18181b 0%, #09090b 100%);
-            border-top: 2px solid #3f3f46;
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
-        }
-
-        .action-iron {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            gap: 0.5rem; padding: 0.5rem;
-            background-color: #121214; border: 1px solid #3f3f46;
-            color: #a1a1aa; text-transform: uppercase; font-size: 0.70rem; font-weight: bold;
-            transition: all 0.1s ease; width: 100%; min-height: 80px; cursor: pointer;
-            position: relative; overflow: hidden;
-        }
-
-        .action-iron:hover {
-            background-color: #27272a; border-color: #a1a1aa; color: #fff;
-            transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-        }
-
-        .action-iron:active { transform: translateY(1px); }
-
-        .icon-large { width: 32px; height: 32px; image-rendering: pixelated; object-fit: contain; }
-        .icon-small { width: 18px; height: 18px; image-rendering: pixelated; object-fit: contain; }
-
-        /* Vinheta Cinematográfica Dinâmica */
-        #vignette {
-            position: absolute; inset: 0; pointer-events: none; z-index: 5;
-            box-shadow: inset 0 0 150px rgba(0,0,0,0.9);
-            transition: box-shadow 0.5s ease;
-        }
+        body { background: #050505; color: #d4d4d8; font-family: 'Courier New', Courier, monospace; overflow: hidden; margin: 0; }
+        #game-container { position: absolute; inset: 0; }
+        #ui-layer { position: absolute; inset: 0; pointer-events: none; z-index: 10; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; }
+        .hud-panel { pointer-events: auto; background: rgba(0,0,0,0.8); border: 1px solid #33261a; padding: 15px; }
+        .build-btn { cursor: pointer; transition: 0.3s; border: 1px solid #4a3626; padding: 10px; text-align: center; background: #1a1a1a; }
+        .build-btn:hover { background: #33261a; box-shadow: 0 0 10px #b87333; }
     </style>
 </head>
 <body>
 
-    <div id="game-container"></div>
-    <div id="vignette"></div>
+<div id="game-container"></div>
 
-    <div id="ui-layer">
-        
-        <header class="bg-zinc-950/90 border-b border-red-900/30 p-3 shadow-lg backdrop-blur-md interactive-panel">
-            <div class="max-w-7xl mx-auto flex justify-between items-center text-sm">
-                
-                <div class="flex gap-4">
-                    <div class="flex items-center gap-2 bg-black/60 px-4 py-1.5 rounded border border-zinc-800">
-                        <img src="assets/food.png" class="icon-small">
-                        <span id="res-biomass" class="font-bold text-emerald-500 tracking-wider">300</span>
-                    </div>
-                    <div class="flex items-center gap-2 bg-black/60 px-4 py-1.5 rounded border border-zinc-800">
-                        <img src="assets/wood.png" class="icon-small">
-                        <span id="res-copper" class="font-bold text-amber-600 tracking-wider">150</span>
-                    </div>
-                    <div class="flex items-center gap-2 bg-black/60 px-4 py-1.5 rounded border border-zinc-800">
-                        <span class="text-zinc-500 font-bold">VAPOR:</span>
-                        <span id="res-steam" class="font-bold text-orange-500 tracking-wider">100%</span>
-                    </div>
-                </div>
-
-                <div class="flex items-center gap-6">
-                    <div class="text-right">
-                        <div id="weather-status" class="text-xs text-zinc-400 font-bold tracking-widest uppercase">Atmosfera Calma</div>
-                        <div id="day-counter" class="text-red-500 font-black tracking-[0.2em] text-lg">CICLO 01</div>
-                    </div>
-                </div>
-
-            </div>
-        </header>
-
-        <main class="flex-1 relative p-4 pointer-events-none">
-            <div class="absolute bottom-4 left-4 w-96 h-56 bg-zinc-950/90 border border-zinc-800 p-4 overflow-y-auto flex flex-col-reverse text-[11px] text-zinc-400 font-mono interactive-panel shadow-2xl" id="combat-log">
-                <div><span class="text-orange-500 font-bold">[CORE]</span> Inicialização do motor WebGL AAA concluída.</div>
-            </div>
-        </main>
-
-        <footer class="panel-dark-wood p-3 interactive-panel">
-            <div class="max-w-5xl mx-auto grid grid-cols-4 md:grid-cols-6 gap-3">
-                <button class="build-btn action-iron" data-building="house">
-                    <img src="assets/house.png" class="icon-large">
-                    <span>Cabana Óssea</span>
-                    <span class="text-[9px] text-amber-600">50 Cobre</span>
-                </button>
-                <button class="build-btn action-iron" data-building="farm">
-                    <img src="assets/farm.png" class="icon-large">
-                    <span>Cultivo de Carne</span>
-                    <span class="text-[9px] text-amber-600">40 Cobre</span>
-                </button>
-                <button class="build-btn action-iron" data-building="wall">
-                    <img src="assets/wall.png" class="icon-large">
-                    <span>Paliçada</span>
-                    <span class="text-[9px] text-amber-600">60 Cobre</span>
-                </button>
-                <button class="build-btn action-iron" data-building="incubator">
-                    <img src="assets/food.png" class="icon-large">
-                    <span>Incubadora</span>
-                    <span class="text-[9px] text-amber-600">100 Cobre</span>
-                </button>
-            </div>
-        </footer>
+<div id="ui-layer">
+    <div class="hud-panel w-full flex justify-between items-center">
+        <div class="flex gap-6 text-sm">
+            <div>BIOMASSA: <span id="res-bio" class="text-emerald-500">300</span></div>
+            <div>COBRE: <span id="res-cop" class="text-amber-600">150</span></div>
+            <div>VAPOR: <span id="res-vap" class="text-blue-400">100%</span></div>
+        </div>
+        <div class="text-xl tracking-widest uppercase">Império de Ferro</div>
     </div>
 
-    <script>
-        // ==========================================
-        // 1. BARRAMENTO DE EVENTOS (EventBus)
-        // ==========================================
-        window.Events = {
-            listeners: {},
-            on(event, callback) {
-                if (!this.listeners[event]) this.listeners[event] = [];
-                this.listeners[event].push(callback);
-            },
-            emit(event, data) {
-                if (this.listeners[event]) this.listeners[event].forEach(cb => cb(data));
-            }
-        };
+    <div class="hud-panel w-64 mt-auto">
+        <h2 class="text-xs mb-4 uppercase text-amber-700">Protocolos de Construção</h2>
+        <div class="grid grid-cols-2 gap-2">
+            <div class="build-btn" onclick="startBuild('house')">CABANA</div>
+            <div class="build-btn" onclick="startBuild('farm')">FAZENDA</div>
+            <div class="build-btn" onclick="startBuild('wall')">MURALHA</div>
+        </div>
+    </div>
+</div>
 
-        Events.on('LOG', (data) => {
-            const logBox = document.getElementById('combat-log');
-            if (!logBox) return;
-            let color = data.type === 'critical' ? 'text-red-500 font-bold' : 'text-zinc-300';
-            const entry = document.createElement('div');
-            entry.className = `mb-1.5 ${color}`;
-            entry.innerHTML = `> ${data.text}`;
-            logBox.prepend(entry);
-            if (logBox.children.length > 25) logBox.removeChild(logBox.lastChild);
+<script>
+    // --- LÓGICA DO MOTOR ---
+    const config = {
+        type: Phaser.WEBGL,
+        parent: 'game-container',
+        width: window.innerWidth,
+        height: window.innerHeight,
+        scene: { preload, create, update }
+    };
+
+    const game = new Phaser.Game(config);
+    let buildMode = null;
+
+    function preload() {
+        this.load.image('house', 'house.png');
+        this.load.image('farm', 'farm.png');
+        this.load.image('wall', 'wall.png');
+    }
+
+    function create() {
+        this.cameras.main.setBackgroundColor('#09090b');
+        this.buildings = this.physics.add.staticGroup();
+        
+        // Input para construção
+        this.input.on('pointerdown', (p) => {
+            if (buildMode) {
+                const b = this.buildings.create(p.x, p.y, buildMode);
+                b.setDisplaySize(64, 64);
+                buildMode = null;
+            }
         });
+    }
 
-        // ==========================================
-        // 2. ENGINE WEBGL (PHASER 3) - O MAPA VIVO
-        // ==========================================
-        class EmpireScene extends Phaser.Scene {
-            constructor() {
-                super({ key: 'EmpireScene' });
-                this.isBuilding = false;
-                this.previewSprite = null;
-                this.buildings = []; // Array de entidades de construção
-                
-                // Configurações de Câmera Cinematográfica
-                this.camConfig = {
-                    drag: 0.85, zoomTarget: 1, zoomSpeed: 0.15, minZoom: 0.2, maxZoom: 2.5
-                };
-            }
+    function update() {
+        // Lógica de câmera e simulação contínua aqui
+    }
 
-            preload() {
-                // Carregamento AAA Estrito
-                this.load.image('house', 'assets/house.png');
-                this.load.image('farm', 'assets/farm.png');
-                this.load.image('wall', 'assets/wall.png');
-                this.load.image('incubator', 'assets/food.png');
-                
-                // Textura procedural para fumaça/partículas gerada em memória
-                const graphics = this.make.graphics({x: 0, y: 0, add: false});
-                graphics.fillStyle(0xffffff, 1);
-                graphics.fillCircle(4, 4, 4);
-                graphics.generateTexture('particle', 8, 8);
-            }
-
-            create() {
-                // Fundo Biomecânico/Congelado
-                this.cameras.main.setBackgroundColor('#101216');
-                
-                // Grupos Otimizados
-                this.buildingsGroup = this.add.group();
-                this.roadsGraphics = this.add.graphics(); // Camada de estradas orgânicas
-                this.roadsGraphics.setDepth(0);
-
-                this.setupCinematicCamera();
-                this.setupBuildSystem();
-
-                // Integração com HUD
-                Events.on('START_PLACEMENT', (id) => this.startPlacement(id));
-            }
-
-            setupCinematicCamera() {
-                const cam = this.cameras.main;
-                this.isDragging = false;
-                this.camVelocity = { x: 0, y: 0 };
-
-                this.input.on('pointerdown', (pointer) => {
-                    if (this.isBuilding || pointer.button !== 0) return; 
-                    this.isDragging = true;
-                    this.camVelocity = { x: 0, y: 0 };
-                });
-
-                this.input.on('pointermove', (pointer) => {
-                    if (this.isDragging) {
-                        // Edge Scrolling & Drag
-                        cam.scrollX -= (pointer.x - pointer.prevPosition.x) / cam.zoom;
-                        cam.scrollY -= (pointer.y - pointer.prevPosition.y) / cam.zoom;
-                        this.camVelocity.x = (pointer.x - pointer.prevPosition.x) / cam.zoom;
-                        this.camVelocity.y = (pointer.y - pointer.prevPosition.y) / cam.zoom;
-                    }
-
-                    if (this.isBuilding && this.previewSprite) {
-                        const worldPoint = cam.getWorldPoint(pointer.x, pointer.y);
-                        // Grid invisível e inteligente (snapping a 16px para alinhamento orgânico)
-                        const snap = 16;
-                        this.previewSprite.x = Math.round(worldPoint.x / snap) * snap;
-                        this.previewSprite.y = Math.round(worldPoint.y / snap) * snap;
-                        this.validatePlacement();
-                    }
-                });
-
-                this.input.on('pointerup', () => this.isDragging = false);
-
-                // Zoom Suave (Mouse Wheel)
-                document.getElementById('game-container').addEventListener('wheel', (e) => {
-                    const zoomDir = e.deltaY > 0 ? -1 : 1;
-                    this.camConfig.zoomTarget = Phaser.Math.Clamp(
-                        this.camConfig.zoomTarget + (zoomDir * this.camConfig.zoomSpeed),
-                        this.camConfig.minZoom, this.camConfig.maxZoom
-                    );
-                });
-            }
-
-            setupBuildSystem() {
-                this.input.on('pointerdown', (pointer) => {
-                    // Clique Esquerdo: Constrói
-                    if (this.isBuilding && pointer.button === 0) {
-                        if (this.previewSprite.tintTopLeft === 0x00ffaa) {
-                            this.placeBuilding();
-                        } else {
-                            Events.emit('LOG', { text: "Terreno bloqueado ou corrompido.", type: 'critical' });
-                            this.cameras.main.shake(100, 0.002); // Feedback de erro
-                        }
-                    }
-                    // Clique Direito: Cancela
-                    if (this.isBuilding && pointer.button === 2) {
-                        this.cancelPlacement();
-                    }
-                });
-
-                // Previne menu de contexto ao clicar com botão direito
-                this.input.mouse.disableContextMenu();
-            }
-
-            startPlacement(buildingId) {
-                if (this.previewSprite) this.previewSprite.destroy();
-                this.isBuilding = true;
-                this.currentType = buildingId;
-                
-                let key = this.textures.exists(buildingId) ? buildingId : 'house';
-                this.previewSprite = this.add.sprite(0, 0, key).setAlpha(0.6).setDepth(999);
-                this.previewSprite.setDisplaySize(64, 64);
-            }
-
-            validatePlacement() {
-                let overlap = false;
-                const rectA = this.previewSprite.getBounds();
-                
-                // Checagem de Colisão Otimizada
-                const buildings = this.buildingsGroup.getChildren();
-                for (let i = 0; i < buildings.length; i++) {
-                    if (Phaser.Geom.Intersects.RectangleToRectangle(rectA, buildings[i].getBounds())) {
-                        overlap = true; break;
-                    }
-                }
-                
-                // Verde Tecnológico (Válido) | Vermelho Sangue (Inválido)
-                this.previewSprite.setTint(overlap ? 0xff0000 : 0x00ffaa);
-            }
-
-            placeBuilding() {
-                Events.emit('CONFIRM_BUILD', this.currentType);
-                
-                const x = this.previewSprite.x;
-                const y = this.previewSprite.y;
-                const key = this.previewSprite.texture.key;
-
-                const building = this.add.sprite(x, y, key);
-                building.setDisplaySize(64, 64);
-                building.setDepth(y); // Pseudo-3D Y-Sorting
-                this.buildingsGroup.add(building);
-                this.buildings.push({ x, y, type: this.currentType });
-
-                // GERAÇÃO ORGÂNICA DE ESTRADAS
-                this.generateOrganicConnections(x, y);
-
-                // GAME FEEL: Efeito Visual e Câmera
-                this.cameras.main.shake(150, 0.004);
-                this.emitConstructionSmoke(x, y);
-
-                this.cancelPlacement();
-            }
-
-            generateOrganicConnections(newX, newY) {
-                // Encontra o prédio mais próximo para conectar uma estrada
-                if (this.buildings.length < 2) return;
-
-                let nearest = null;
-                let minDist = Infinity;
-
-                for (let i = 0; i < this.buildings.length - 1; i++) {
-                    const b = this.buildings[i];
-                    const dist = Phaser.Math.Distance.Between(newX, newY, b.x, b.y);
-                    if (dist < minDist && dist < 400) { // Conecta apenas se estiver a até 400px
-                        minDist = dist;
-                        nearest = b;
-                    }
-                }
-
-                if (nearest) {
-                    this.roadsGraphics.lineStyle(8, 0x1a1210, 0.8); // Estrada de barro/carne
-                    this.roadsGraphics.beginPath();
-                    this.roadsGraphics.moveTo(newX, newY);
-                    
-                    // Curva Bézier para parecer orgânico e não uma linha reta de computador
-                    const midX = (newX + nearest.x) / 2 + (Math.random() * 40 - 20);
-                    const midY = (newY + nearest.y) / 2 + (Math.random() * 40 - 20);
-                    
-                    this.roadsGraphics.quadraticCurveTo(midX, midY, nearest.x, nearest.y);
-                    this.roadsGraphics.strokePath();
-                }
-            }
-
-            emitConstructionSmoke(x, y) {
-                const emitter = this.add.particles(x, y + 20, 'particle', {
-                    speed: { min: 20, max: 60 },
-                    angle: { min: 240, max: 300 },
-                    scale: { start: 1, end: 0 },
-                    alpha: { start: 0.5, end: 0 },
-                    tint: 0x444444,
-                    lifespan: 2000,
-                    gravityY: -50
-                });
-                emitter.explode(20);
-            }
-
-            cancelPlacement() {
-                this.isBuilding = false;
-                if (this.previewSprite) {
-                    this.previewSprite.destroy();
-                    this.previewSprite = null;
-                }
-            }
-
-            update(time, delta) {
-                // Câmera Damping
-                if (!this.isDragging) {
-                    this.cameras.main.scrollX -= this.camVelocity.x;
-                    this.cameras.main.scrollY -= this.camVelocity.y;
-                    this.camVelocity.x *= this.camConfig.drag;
-                    this.camVelocity.y *= this.camConfig.drag;
-                }
-                
-                // Câmera Zoom Lerp
-                this.cameras.main.zoom = Phaser.Math.Linear(this.cameras.main.zoom, this.camConfig.zoomTarget, 0.1);
-            }
-        }
-
-        // ==========================================
-        // 3. LÓGICA DE SISTEMA (ColonyManager)
-        // ==========================================
-        class ColonyManager {
-            constructor() {
-                this.resources = { biomass: 200, copper: 150, steam: 100 };
-                this.day = 1;
-                this.tickTimer = 0;
-
-                this.catalog = {
-                    'house': { name: 'Cabana Óssea', cost: 50, rate: 0 },
-                    'farm': { name: 'Cultivo', cost: 40, rate: 5 },
-                    'wall': { name: 'Paliçada', cost: 60, rate: 0 },
-                    'incubator': { name: 'Incubadora', cost: 100, rate: 15 }
-                };
-                
-                this.init();
-            }
-
-            init() {
-                // Ciclo Fixo de Simulação
-                setInterval(() => this.simulationTick(), 1000);
-
-                // Botões de UI HTML chamam a Engine WebGL
-                document.querySelectorAll('.build-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const id = btn.getAttribute('data-building');
-                        const cost = this.catalog[id].cost;
-                        
-                        if (this.resources.copper >= cost) {
-                            Events.emit('START_PLACEMENT', id);
-                        } else {
-                            Events.emit('LOG', { text: `Recursos insuficientes para ${this.catalog[id].name}.`, type: 'critical' });
-                        }
-                    });
-                });
-
-                // Confirmação de Construção (Debita os recursos reais)
-                Events.on('CONFIRM_BUILD', (id) => {
-                    this.resources.copper -= this.catalog[id].cost;
-                    Events.emit('LOG', { text: `[CONSTRUÇÃO] ${this.catalog[id].name} enraizada com sucesso.` });
-                    this.updateUI();
-                });
-            }
-
-            simulationTick() {
-                this.tickTimer++;
-                
-                // Avanço de Dias
-                if(this.tickTimer >= 10) {
-                    this.day++;
-                    this.tickTimer = 0;
-                    document.getElementById('day-counter').innerText = `CICLO ${this.day.toString().padStart(2, '0')}`;
-                    
-                    if(this.day % 5 === 0) {
-                        Events.emit('LOG', { text: "Tempestade de Cinzas se aproximando...", type: 'warning' });
-                        document.getElementById('vignette').style.boxShadow = "inset 0 0 250px rgba(100,0,0,0.9)";
-                        setTimeout(() => { document.getElementById('vignette').style.boxShadow = "inset 0 0 150px rgba(0,0,0,0.9)"; }, 4000);
-                    }
-                }
-
-                // Dreno térmico
-                this.resources.steam = Math.max(0, this.resources.steam - 1);
-                
-                this.updateUI();
-            }
-
-            updateUI() {
-                document.getElementById('res-biomass').innerText = Math.floor(this.resources.biomass);
-                document.getElementById('res-copper').innerText = Math.floor(this.resources.copper);
-                document.getElementById('res-steam').innerText = `${this.resources.steam}%`;
-            }
-        }
-
-        // ==========================================
-        // 4. BOOTSTRAP DO SISTEMA
-        // ==========================================
-        window.onload = () => {
-            // Inicializa Motor WebGL
-            const config = {
-                type: Phaser.WEBGL,
-                parent: 'game-container',
-                width: window.innerWidth,
-                height: window.innerHeight,
-                pixelArt: true,
-                backgroundColor: '#000000',
-                scene: EmpireScene
-            };
-            window.game = new Phaser.Game(config);
-
-            // Redimensionamento Dinâmico
-            window.addEventListener('resize', () => {
-                if (window.game) window.game.scale.resize(window.innerWidth, window.innerHeight);
-            });
-
-            // Inicializa Gestor de Lógica
-            window.Colony = new ColonyManager();
-        };
-    </script>
+    function startBuild(type) {
+        buildMode = type;
+        console.log("Modo Construção:", type);
+    }
+</script>
 </body>
 </html>
