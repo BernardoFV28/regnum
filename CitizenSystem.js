@@ -41,3 +41,37 @@ export class CitizenAI {
         this.executeProfessionTask(index, archetypes);
     }
 }
+initPostProcessing() {
+    // Pipeline Customizada WebGL
+    const customPipeline = new Phaser.Renderer.WebGL.Pipelines.PostFXPipeline({
+        game: this.game,
+        fragShader: `
+            precision mediump float;
+            uniform sampler2D uMainSampler;
+            uniform float uTime;
+            uniform float uFreezeLevel; // Escala de 0.0 a 1.0 baseado na Temperatura
+            uniform float uInsanity;    // Aberração cromática
+            varying vec2 outTexCoord;
+
+            void main() {
+                vec2 uv = outTexCoord;
+                
+                // Aberração Cromática induzida por Insanidade
+                float r = texture2D(uMainSampler, uv + vec2(uInsanity * 0.005, 0.0)).r;
+                float g = texture2D(uMainSampler, uv).g;
+                float b = texture2D(uMainSampler, uv - vec2(uInsanity * 0.005, 0.0)).b;
+                
+                vec4 color = vec4(r, g, b, 1.0);
+                
+                // Vinheta de gelinho
+                float dist = distance(uv, vec2(0.5, 0.5));
+                float freezeVignette = smoothstep(0.4, 0.8, dist) * uFreezeLevel;
+                color.rgb = mix(color.rgb, vec3(0.7, 0.8, 0.9), freezeVignette); // Tintura de gelo
+
+                gl_FragColor = color;
+            }
+        `
+    });
+
+    this.cameras.main.setPostPipeline(customPipeline);
+}
