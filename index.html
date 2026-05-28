@@ -41,7 +41,7 @@
             width: 100%;
             min-height: 80px;
             cursor: pointer;
-            pointer-events: auto; /* Garante clique sobre o canvas */
+            pointer-events: auto;
         }
 
         .action-iron:hover {
@@ -63,17 +63,15 @@
         .icon-large { width: 32px; height: 32px; image-rendering: pixelated; object-fit: contain; }
         .icon-small { width: 18px; height: 18px; image-rendering: pixelated; object-fit: contain; }
 
-        /* Container do Phaser */
         #game-container {
             position: absolute;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            z-index: 0; /* Fica atrás da UI */
+            z-index: 0;
         }
 
-        /* UI sobreposta */
         #ui-layer {
             position: absolute;
             top: 0;
@@ -83,11 +81,10 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            pointer-events: none; /* Deixa o mouse passar para o canvas */
+            pointer-events: none;
             z-index: 10;
         }
         
-        /* Reativa cliques apenas nos painéis */
         header, footer, #combat-log, #combat-overlay {
             pointer-events: auto; 
         }
@@ -187,7 +184,7 @@
 
     <script>
         // ==========================================
-        // 1. SISTEMA DE EVENTOS GLOBORAIS
+        // 1. SISTEMA DE EVENTOS GLOBAIS
         // ==========================================
         window.Events = {
             listeners: {},
@@ -202,7 +199,6 @@
             }
         };
 
-        // UI de Log
         Events.on('COMBAT_LOG', (data) => {
             const logBox = document.getElementById('combat-log');
             if (!logBox) return;
@@ -232,7 +228,6 @@
             }
 
             preload() {
-                // Carrega estritamente os assets fornecidos
                 this.load.image('house', 'assets/house.png');
                 this.load.image('farm', 'assets/farm.png');
                 this.load.image('wall', 'assets/wall.png');
@@ -241,10 +236,9 @@
             }
 
             create() {
-                this.cameras.main.setBackgroundColor('#101014'); // Fundo biomecânico sombrio
+                this.cameras.main.setBackgroundColor('#101014');
                 this.buildingsGroup = this.physics.add.staticGroup();
 
-                // SETUP CÂMERA
                 const cam = this.cameras.main;
                 this.isDragging = false;
                 this.camVelocity = { x: 0, y: 0 };
@@ -263,7 +257,6 @@
                         this.camVelocity.y = (pointer.position.y - pointer.prevPosition.y) / cam.zoom;
                     }
 
-                    // Sistema de Preview
                     if (this.isBuilding && this.previewSprite) {
                         const worldPoint = cam.getWorldPoint(pointer.x, pointer.y);
                         const snapSize = 16;
@@ -275,7 +268,6 @@
 
                 this.input.on('pointerup', () => { this.isDragging = false; });
 
-                // Zoom
                 document.getElementById('game-container').addEventListener('wheel', (e) => {
                     const zoomDir = e.deltaY > 0 ? -1 : 1;
                     this.camConfig.zoomTarget = Phaser.Math.Clamp(
@@ -284,7 +276,6 @@
                     );
                 });
 
-                // Construir ao clicar
                 this.input.on('pointerdown', (pointer) => {
                     if (this.isBuilding && pointer.leftButtonDown()) {
                         if (this.previewSprite.tintTopLeft === 0x00ff00) {
@@ -295,7 +286,6 @@
                     }
                 });
 
-                // Escuta o HUD
                 Events.on('START_PLACEMENT', (buildingId) => {
                     this.startPlacement(buildingId);
                 });
@@ -306,11 +296,12 @@
                 this.isBuilding = true;
                 this.currentBuildingType = buildingId;
                 
-                // Trata as texturas (caso não tenha asset, usa house provisoriamente)
                 let textureKey = buildingId;
                 if (!this.textures.exists(textureKey)) textureKey = 'house';
 
+                // CORREÇÃO DE ESCALA: Força o holograma a ter 64x64 no mapa
                 this.previewSprite = this.add.sprite(0, 0, textureKey).setAlpha(0.6).setDepth(100);
+                this.previewSprite.setDisplaySize(64, 64);
                 this.physics.add.existing(this.previewSprite);
             }
 
@@ -326,13 +317,16 @@
             }
 
             placeBuilding() {
-                // Notifica o ColonyManager para debitar os recursos
                 Events.emit('CONFIRM_BUILD', this.currentBuildingType);
                 
+                // CORREÇÃO DE ESCALA: Cria o prédio e aplica as dimensões exatas na física e no sprite
                 const building = this.buildingsGroup.create(this.previewSprite.x, this.previewSprite.y, this.previewSprite.texture.key);
+                building.setDisplaySize(64, 64);
+                building.refreshBody(); // Essencial para atualizar a área de colisão após o redimensionamento
                 building.setOrigin(0.5);
-                building.setDepth(this.previewSprite.y); // Fake 3D (Y-sorting)
-                this.cancelPlacement(); // Desliga modo construção após 1 clique
+                building.setDepth(this.previewSprite.y); 
+
+                this.cancelPlacement(); 
             }
 
             cancelPlacement() {
@@ -354,7 +348,6 @@
             }
         }
 
-        // Configuração do Phaser
         const config = {
             type: Phaser.WEBGL,
             parent: 'game-container',
@@ -366,7 +359,6 @@
             scene: CityBuilderScene
         };
 
-        // Redimensionamento dinâmico
         window.addEventListener('resize', () => {
             if (window.game) window.game.scale.resize(window.innerWidth, window.innerHeight);
         });
@@ -404,7 +396,6 @@
                     });
                 });
 
-                // Escuta quando o Phaser confirma que o prédio foi colocado no mapa
                 Events.on('CONFIRM_BUILD', (buildingId) => {
                     this.executeBuild(buildingId);
                 });
@@ -412,7 +403,6 @@
                 this.updateUI();
             }
 
-            // 1º Passo: Checa se tem grana ANTES de virar holograma
             requestBuild(buildingId) {
                 const b = this.buildings.find(item => item.id === buildingId);
                 if (!b) return;
@@ -426,7 +416,6 @@
                 }
             }
 
-            // 2º Passo: Cobra e executa APÓS clicar no chão válido
             executeBuild(buildingId) {
                 const b = this.buildings.find(item => item.id === buildingId);
                 this.resources[b.costType] -= b.costValue;
@@ -500,7 +489,6 @@
             }
         }
 
-        // INICIA O MOTOR E O MANAGER ASSIM QUE A PÁGINA CARREGA
         window.onload = () => {
             window.game = new Phaser.Game(config);
             window.Colony = new ColonyManager();
