@@ -1,1464 +1,285 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-
-<title>IMPERIUM CARNIS — BIOMECHANICAL FROST EMPIRE</title>
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Rajdhani:wght@300;400;500;700&display=swap" rel="stylesheet">
-
-<style>
-
-/* =========================================================
-   IMPERIUM CARNIS
-   AAA BIOMECHANICAL IMPERIAL UI
-========================================================= */
-
-:root{
-
-    --bg:#07090b;
-    --bg2:#0f1318;
-    --panel:#0d1014e6;
-
-    --iron:#1f2328;
-    --iron2:#313841;
-
-    --copper:#9d5f30;
-    --copperGlow:#d08b45;
-
-    --blood:#5d0d11;
-    --steam:#94aab8;
-
-    --frost:#d7ecff;
-    --thermal:#ff8f52;
-
-    --green:#6cffae;
-    --red:#ff4e5f;
-    --yellow:#ffce5e;
-
-    --text:#d5dce4;
-    --muted:#8b96a3;
-
-    --hudHeight:78px;
-    --leftPanel:360px;
-    --rightPanel:360px;
-
-    --shadow:
-        0 0 0 1px rgba(255,255,255,.03),
-        0 10px 30px rgba(0,0,0,.55),
-        inset 0 0 80px rgba(255,255,255,.02);
-
-}
-
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
-
-html,body{
-    width:100%;
-    height:100%;
-    overflow:hidden;
-    background:var(--bg);
-    color:var(--text);
-    font-family:'Rajdhani',sans-serif;
-}
-
-/* =========================================================
-   GLOBAL ATMOSPHERE
-========================================================= */
-
-body::before{
-    content:'';
-    position:fixed;
-    inset:0;
-
-    background:
-        radial-gradient(circle at top, rgba(255,110,50,.08), transparent 25%),
-        radial-gradient(circle at bottom, rgba(70,110,180,.06), transparent 25%),
-        linear-gradient(to bottom, rgba(255,255,255,.02), rgba(0,0,0,.4));
-
-    pointer-events:none;
-    z-index:200;
-}
-
-body::after{
-    content:'';
-    position:fixed;
-    inset:0;
-
-    background-image:
-        repeating-linear-gradient(
-            to bottom,
-            rgba(255,255,255,.01),
-            rgba(255,255,255,.01) 1px,
-            transparent 1px,
-            transparent 3px
-        );
-
-    mix-blend-mode:soft-light;
-    opacity:.3;
-
-    pointer-events:none;
-    z-index:201;
-}
-
-/* =========================================================
-   MAIN LAYOUT
-========================================================= */
-
-#game-root{
-    position:relative;
-    width:100%;
-    height:100%;
-    overflow:hidden;
-}
-
-/* =========================================================
-   WORLD VIEWPORT
-========================================================= */
-
-#world-viewport{
-
-    position:absolute;
-    inset:0;
-    overflow:hidden;
-    background:
-        radial-gradient(circle at center, #182028 0%, #0b0e12 55%, #050608 100%);
-}
-
-#world{
-
-    position:absolute;
-    width:5000px;
-    height:5000px;
-
-    transform-origin:center center;
-
-    background:
-        radial-gradient(circle at 20% 30%, rgba(255,255,255,.03), transparent 10%),
-        radial-gradient(circle at 70% 80%, rgba(255,255,255,.03), transparent 8%),
-
-        linear-gradient(
-            rgba(255,255,255,.015) 1px,
-            transparent 1px
-        ),
-
-        linear-gradient(
-            90deg,
-            rgba(255,255,255,.015) 1px,
-            transparent 1px
-        ),
-
-        linear-gradient(
-            to bottom,
-            #12161d,
-            #090c10
-        );
-
-    background-size:
-        auto,
-        auto,
-        128px 128px,
-        128px 128px,
-        auto;
-
-    will-change:transform;
-}
-
-/* =========================================================
-   BIOME FOG
-========================================================= */
-
-.fog-layer{
-
-    position:absolute;
-    inset:-10%;
-    pointer-events:none;
-
-    background:
-        radial-gradient(circle at 50% 50%, rgba(180,220,255,.05), transparent 40%),
-        radial-gradient(circle at 20% 70%, rgba(255,255,255,.04), transparent 35%),
-        radial-gradient(circle at 80% 30%, rgba(255,255,255,.04), transparent 40%);
-
-    filter:blur(60px);
-
-    animation:fogMove 40s linear infinite;
-}
-
-@keyframes fogMove{
-
-    0%{
-        transform:translateX(0px);
-    }
-
-    50%{
-        transform:translateX(-200px);
-    }
-
-    100%{
-        transform:translateX(0px);
-    }
-}
-
-/* =========================================================
-   SNOW PARTICLES
-========================================================= */
-
-.snow{
-
-    position:absolute;
-    width:2px;
-    height:2px;
-
-    background:white;
-    border-radius:50%;
-
-    opacity:.7;
-
-    animation:snowFall linear infinite;
-}
-
-@keyframes snowFall{
-
-    from{
-        transform:translateY(-20px);
-    }
-
-    to{
-        transform:translateY(120vh);
-    }
-}
-
-/* =========================================================
-   TOP HUD
-========================================================= */
-
-#top-hud{
-
-    position:absolute;
-    top:0;
-    left:0;
-    right:0;
-
-    height:var(--hudHeight);
-
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-
-    padding:0 18px;
-
-    background:
-        linear-gradient(
-            to bottom,
-            rgba(0,0,0,.95),
-            rgba(10,12,16,.75)
-        );
-
-    border-bottom:
-        1px solid rgba(255,255,255,.08);
-
-    backdrop-filter:blur(12px);
-
-    z-index:100;
-}
-
-.hud-left,
-.hud-center,
-.hud-right{
-    display:flex;
-    align-items:center;
-    gap:16px;
-}
-
-.resource{
-
-    position:relative;
-
-    min-width:120px;
-    padding:8px 14px;
-
-    background:
-        linear-gradient(
-            145deg,
-            rgba(255,255,255,.04),
-            rgba(0,0,0,.4)
-        );
-
-    border:
-        1px solid rgba(255,255,255,.06);
-
-    border-radius:10px;
-
-    overflow:hidden;
-
-    box-shadow:var(--shadow);
-
-    transition:.3s;
-}
-
-.resource:hover{
-
-    transform:translateY(-2px);
-    border-color:rgba(255,180,100,.4);
-
-    box-shadow:
-        0 0 20px rgba(255,160,80,.2),
-        inset 0 0 20px rgba(255,255,255,.04);
-}
-
-.resource::before{
-
-    content:'';
-    position:absolute;
-    inset:0;
-
-    background:
-        linear-gradient(
-            90deg,
-            transparent,
-            rgba(255,255,255,.06),
-            transparent
-        );
-
-    transform:translateX(-100%);
-
-    animation:scan 4s linear infinite;
-}
-
-@keyframes scan{
-
-    to{
-        transform:translateX(100%);
-    }
-}
-
-.resource-title{
-
-    font-size:11px;
-    letter-spacing:2px;
-    color:var(--muted);
-    text-transform:uppercase;
-}
-
-.resource-value{
-
-    font-size:24px;
-    font-weight:700;
-    color:var(--text);
-}
-
-.resource-icon{
-
-    position:absolute;
-    right:10px;
-    top:10px;
-
-    opacity:.2;
-    font-size:28px;
-
-    animation:pulse 3s infinite;
-}
-
-@keyframes pulse{
-
-    0%,100%{
-        transform:scale(1);
-        opacity:.2;
-    }
-
-    50%{
-        transform:scale(1.2);
-        opacity:.45;
-    }
-}
-
-/* =========================================================
-   SIDE PANELS
-========================================================= */
-
-.panel{
-
-    position:absolute;
-    top:calc(var(--hudHeight) + 10px);
-    bottom:14px;
-
-    background:var(--panel);
-
-    border:
-        1px solid rgba(255,255,255,.06);
-
-    box-shadow:var(--shadow);
-
-    backdrop-filter:blur(16px);
-
-    overflow:hidden;
-
-    z-index:80;
-}
-
-#left-panel{
-
-    left:14px;
-    width:var(--leftPanel);
-
-    border-radius:18px;
-}
-
-#right-panel{
-
-    right:14px;
-    width:var(--rightPanel);
-
-    border-radius:18px;
-}
-
-/* =========================================================
-   PANEL HEADER
-========================================================= */
-
-.panel-header{
-
-    height:58px;
-
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-
-    padding:0 18px;
-
-    border-bottom:
-        1px solid rgba(255,255,255,.05);
-
-    background:
-        linear-gradient(
-            to right,
-            rgba(255,130,60,.08),
-            transparent
-        );
-}
-
-.panel-title{
-
-    font-family:'Cinzel',serif;
-    letter-spacing:2px;
-    font-size:18px;
-}
-
-/* =========================================================
-   BUILD MENU
-========================================================= */
-
-.build-list{
-    padding:14px;
-    overflow:auto;
-    height:calc(100% - 58px);
-}
-
-.build-card{
-
-    position:relative;
-
-    margin-bottom:14px;
-    padding:14px;
-
-    border-radius:14px;
-
-    background:
-        linear-gradient(
-            145deg,
-            rgba(255,255,255,.03),
-            rgba(0,0,0,.35)
-        );
-
-    border:
-        1px solid rgba(255,255,255,.05);
-
-    cursor:pointer;
-
-    overflow:hidden;
-
-    transition:.35s;
-}
-
-.build-card:hover{
-
-    transform:translateY(-4px);
-
-    border-color:
-        rgba(255,160,90,.5);
-
-    box-shadow:
-        0 0 30px rgba(255,140,70,.12),
-        inset 0 0 40px rgba(255,255,255,.03);
-}
-
-.build-card::before{
-
-    content:'';
-    position:absolute;
-    inset:0;
-
-    background:
-        linear-gradient(
-            120deg,
-            transparent,
-            rgba(255,255,255,.08),
-            transparent
-        );
-
-    transform:translateX(-120%);
-    transition:1s;
-}
-
-.build-card:hover::before{
-    transform:translateX(120%);
-}
-
-.build-name{
-
-    font-size:18px;
-    font-weight:700;
-    letter-spacing:1px;
-}
-
-.build-desc{
-
-    margin-top:6px;
-    color:var(--muted);
-    font-size:13px;
-    line-height:1.4;
-}
-
-.build-meta{
-
-    display:flex;
-    gap:10px;
-    margin-top:12px;
-    flex-wrap:wrap;
-}
-
-.meta{
-
-    font-size:11px;
-    padding:5px 8px;
-
-    border-radius:999px;
-
-    background:rgba(255,255,255,.04);
-}
-
-/* =========================================================
-   MINIMAP
-========================================================= */
-
-#minimap{
-
-    position:absolute;
-    right:24px;
-    bottom:24px;
-
-    width:260px;
-    height:260px;
-
-    background:
-        radial-gradient(circle, #10161c, #06080b);
-
-    border-radius:18px;
-
-    border:
-        1px solid rgba(255,255,255,.06);
-
-    overflow:hidden;
-
-    box-shadow:var(--shadow);
-
-    z-index:110;
-}
-
-#minimap::before{
-
-    content:'';
-    position:absolute;
-    inset:0;
-
-    background:
-        repeating-linear-gradient(
-            to bottom,
-            rgba(255,255,255,.03),
-            rgba(255,255,255,.03) 1px,
-            transparent 1px,
-            transparent 4px
-        );
-
-    opacity:.2;
-}
-
-#minimap-scan{
-
-    position:absolute;
-    top:-100%;
-    left:0;
-    width:100%;
-    height:100%;
-
-    background:
-        linear-gradient(
-            to bottom,
-            transparent,
-            rgba(130,255,170,.1),
-            transparent
-        );
-
-    animation:minimapScan 4s linear infinite;
-}
-
-@keyframes minimapScan{
-
-    to{
-        transform:translateY(300%);
-    }
-}
-
-/* =========================================================
-   CITY PANEL
-========================================================= */
-
-.city-stats{
-    padding:18px;
-}
-
-.stat{
-
-    margin-bottom:16px;
-}
-
-.stat-label{
-
-    display:flex;
-    justify-content:space-between;
-
-    margin-bottom:6px;
-    font-size:13px;
-}
-
-.bar{
-
-    height:12px;
-
-    border-radius:999px;
-
-    overflow:hidden;
-
-    background:
-        rgba(255,255,255,.05);
-
-    border:
-        1px solid rgba(255,255,255,.04);
-}
-
-.bar-fill{
-
-    height:100%;
-
-    background:
-        linear-gradient(
-            90deg,
-            var(--thermal),
-            #ffca7a
-        );
-
-    box-shadow:
-        0 0 20px rgba(255,160,70,.3);
-
-    animation:barPulse 4s infinite;
-}
-
-@keyframes barPulse{
-
-    50%{
-        filter:brightness(1.2);
-    }
-}
-
-/* =========================================================
-   EVENT LOG
-========================================================= */
-
-#event-log{
-
-    position:absolute;
-
-    left:390px;
-    bottom:20px;
-
-    width:460px;
-    max-height:260px;
-
-    overflow:auto;
-
-    padding:12px;
-
-    background:
-        rgba(5,6,8,.75);
-
-    border:
-        1px solid rgba(255,255,255,.05);
-
-    border-radius:16px;
-
-    backdrop-filter:blur(14px);
-
-    z-index:90;
-}
-
-.log{
-
-    padding:10px 12px;
-    margin-bottom:10px;
-
-    border-left:3px solid var(--red);
-
-    background:
-        rgba(255,255,255,.03);
-
-    animation:logEntry .5s ease;
-}
-
-@keyframes logEntry{
-
-    from{
-        transform:translateX(-30px);
-        opacity:0;
-    }
-
-    to{
-        transform:translateX(0px);
-        opacity:1;
-    }
-}
-
-.log-time{
-
-    color:var(--muted);
-    font-size:11px;
-    margin-bottom:4px;
-}
-
-.log-text{
-    font-size:14px;
-}
-
-/* =========================================================
-   BUILD OVERLAY
-========================================================= */
-
-#build-overlay{
-
-    position:absolute;
-    inset:0;
-
-    pointer-events:none;
-
-    opacity:0;
-    transition:.25s;
-
-    z-index:70;
-}
-
-#build-overlay.active{
-    opacity:1;
-}
-
-.grid{
-
-    position:absolute;
-    inset:0;
-
-    background-image:
-        linear-gradient(
-            rgba(255,255,255,.03) 1px,
-            transparent 1px
-        ),
-        linear-gradient(
-            90deg,
-            rgba(255,255,255,.03) 1px,
-            transparent 1px
-        );
-
-    background-size:64px 64px;
-}
-
-#placement{
-
-    position:absolute;
-    width:128px;
-    height:128px;
-
-    border:
-        2px solid var(--green);
-
-    background:
-        rgba(100,255,170,.1);
-
-    backdrop-filter:blur(2px);
-
-    box-shadow:
-        0 0 30px rgba(100,255,170,.35);
-
-    animation:holoPulse 2s infinite;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feudo Brutal: O Último Núcleo</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Crimson+Text:ital,wght@0,400;0,700;1,400&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>:root {
+    /* Paleta Biomecânica */
+    --void-black: #020202;
+    --surface-dark: #0d0d0d;
+    --surface-light: #111111;
+    --metal-border: #2a2318;
+    --metal-rust: #3d3020;
+    
+    --text-primary: #c8b89a;
+    --text-secondary: #6b5f4e;
+    
+    --gold-dirty: #8a6c2a;
+    --gold-bright: #c49a2e;
+    --blood-red: #6b1515;
+    --blood-bright: #8b0000;
+    --flesh-green: #1a3d1a;
+    --amber-steam: #c47000;
+    --copper-raw: #8b5a00;
+
+    /* Fontes */
+    --font-title: 'Cinzel', serif;
+    --font-body: 'Crimson Text', serif;
+    --font-mono: 'Share Tech Mono', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background-color: var(--void-black);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    overflow: hidden;
+    user-select: none;
+}
+
+/* Efeito Scanlines Global */
+body::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        to bottom,
+        rgba(0,0,0,0) 0px,
+        rgba(0,0,0,0) 2px,
+        rgba(0,0,0,0.1) 3px
+    );
+    pointer-events: none;
+    z-index: 999;
+}
+
+/* Estado de Crise Global */
+body.crisis {
+    animation: crisis-throb 2s infinite;
+}
+@keyframes crisis-throb {
+    0%, 100% { box-shadow: inset 0 0 0px var(--blood-red); }
+    50% { box-shadow: inset 0 0 150px var(--blood-bright); }
+}
+
+#ash-canvas {
+    position: absolute; inset: 0; z-index: 1;
+}
+
+#ui-layer {
+    position: relative; z-index: 10;
+    width: 100vw; height: 100vh;
+    display: grid;
+    grid-template-columns: 350px 1fr 300px;
+    grid-template-rows: 80px 1fr 200px;
+    padding: 20px; gap: 20px;
+}
+
+/* Painéis Base AAA */
+.panel {
+    background: radial-gradient(circle at top, var(--surface-light), var(--surface-dark));
+    border: 2px solid var(--metal-border);
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 5px 15px rgba(0,0,0,0.5);
+    border-radius: 2px;
+    position: relative;
+    overflow: hidden;
+}
+
+.panel::before {
+    content: ""; position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+    pointer-events: none; mix-blend-mode: overlay;
+}
+
+h2 {
+    font-family: var(--font-title);
+    color: var(--gold-dirty);
+    text-align: center;
+    letter-spacing: 2px;
+    border-bottom: 1px solid var(--metal-rust);
+    padding-bottom: 10px; margin-bottom: 15px;
 }
 
-@keyframes holoPulse{
-
-    50%{
-        transform:scale(1.02);
-        filter:brightness(1.25);
-    }
+/* TOP-BAR */
+#top-bar {
+    grid-column: 1 / -1; display: flex; gap: 30px; justify-content: center;
 }
-
-/* =========================================================
-   OVERLAYS
-========================================================= */
-
-.overlay{
 
-    position:absolute;
-    inset:0;
-
-    pointer-events:none;
-    opacity:0;
-
-    mix-blend-mode:screen;
-
-    transition:.4s;
-
-    z-index:150;
+.resource-capsule {
+    background: var(--surface-dark); border: 1px solid var(--metal-border);
+    display: flex; align-items: center; padding: 10px 20px; gap: 15px;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.9);
 }
 
-.overlay.active{
-    opacity:1;
-}
+.res-icon { width: 32px; height: 32px; }
 
-#cold-overlay{
+.res-info { display: flex; flex-direction: column; }
+.res-label { font-family: var(--font-title); font-size: 10px; color: var(--text-secondary); }
+.res-value { font-family: var(--font-mono); font-size: 24px; color: var(--text-primary); position: relative; }
 
-    background:
-        radial-gradient(circle, transparent 30%, rgba(130,180,255,.08));
+/* Floating Numbers */
+.float-text {
+    position: absolute; left: 110%; top: 0;
+    font-family: var(--font-mono); font-weight: bold;
+    animation: floatUp 2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
 }
-
-#danger-overlay{
-
-    background:
-        radial-gradient(circle, transparent 20%, rgba(255,40,40,.1));
-
-    animation:dangerPulse 1s infinite;
+@keyframes floatUp {
+    0% { transform: translateY(10px); opacity: 1; }
+    100% { transform: translateY(-30px); opacity: 0; }
 }
 
-@keyframes dangerPulse{
-
-    50%{
-        opacity:.6;
-    }
+/* STEAM BAR (Frostpunk Style) */
+.steam-gauge-container {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: var(--surface-dark); border: 1px solid var(--metal-border); padding: 5px 20px;
 }
-
-/* =========================================================
-   BUILDINGS
-========================================================= */
+.steam-bar { display: flex; gap: 2px; margin: 5px 0; }
+.steam-segment { width: 15px; height: 20px; background: var(--metal-border); transition: background 0.3s; }
+.steam-segment.active { background: var(--amber-steam); box-shadow: 0 0 8px var(--amber-steam); }
+.steam-segment.critical { animation: flicker-light 0.2s infinite; background: var(--blood-red); }
 
-.building{
+@keyframes flicker-light { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-    position:absolute;
+/* SIDE-LEFT (Construção) */
+#side-left { grid-row: 2 / 4; grid-column: 1; display: flex; flex-direction: column; gap: 15px; }
+.header-panel { padding: 15px; }
 
-    width:140px;
-    height:140px;
+.grid-2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; overflow-y: auto; padding-right: 5px; }
 
-    background:
-        linear-gradient(
-            145deg,
-            #2a2d32,
-            #0d0f13
-        );
-
-    border:
-        1px solid rgba(255,255,255,.08);
-
-    box-shadow:
-        0 0 40px rgba(0,0,0,.6),
-        inset 0 0 20px rgba(255,255,255,.03);
-
-    border-radius:12px;
-
-    overflow:hidden;
-}
-
-.building::before{
-
-    content:'';
-    position:absolute;
-    inset:0;
-
-    background:
-        radial-gradient(circle at top, rgba(255,140,60,.15), transparent 50%);
+.building-card {
+    background: var(--surface-dark); border: 1px solid var(--metal-rust);
+    padding: 10px; cursor: pointer; transition: all 0.2s;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
 }
-
-.building::after{
-
-    content:'';
-    position:absolute;
-    width:12px;
-    height:12px;
+.building-card:hover { border-color: var(--gold-dirty); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(138, 108, 42, 0.1); }
+.building-card:active { transform: translateY(1px); }
+.building-card.disabled { filter: grayscale(1) opacity(0.5); pointer-events: none; }
+.building-card.active-pulse { animation: pulse-organic 3s infinite; border-color: var(--flesh-green); }
 
-    background:var(--thermal);
-    border-radius:50%;
+@keyframes pulse-organic { 0%, 100% { box-shadow: inset 0 0 0px var(--flesh-green); } 50% { box-shadow: inset 0 0 20px var(--flesh-green); } }
 
-    top:20px;
-    right:20px;
+.bldg-icon { width: 40px; height: 40px; margin-bottom: 8px; }
+.bldg-name { font-family: var(--font-title); font-size: 12px; margin-bottom: 5px; }
+.bldg-cost { font-family: var(--font-mono); font-size: 10px; color: var(--copper-raw); }
 
-    box-shadow:
-        0 0 18px var(--thermal);
+/* SIDE-RIGHT */
+#side-right { grid-row: 2 / 3; grid-column: 3; }
+.clock-panel { padding: 20px; text-align: center; }
+.clock-display { font-family: var(--font-mono); font-size: 36px; color: var(--gold-bright); margin-bottom: 10px; }
+.invasion-warning { font-family: var(--font-mono); color: var(--blood-red); font-size: 12px; }
+.warning-pulse { animation: flicker-light 1s infinite; }
 
-    animation:pulse 2s infinite;
-}
-
-/* =========================================================
-   RESPONSIVE
-========================================================= */
+/* BOTTOM-BAR (Log) */
+#bottom-bar { grid-row: 3 / 4; grid-column: 2 / -1; }
+.log-panel { height: 100%; padding: 15px; overflow: hidden; display: flex; flex-direction: column-reverse; }
 
-@media(max-width:1300px){
-
-    :root{
-        --leftPanel:300px;
-        --rightPanel:300px;
-    }
-
-    #event-log{
-        width:340px;
-    }
+.log-entry {
+    font-family: var(--font-mono); font-size: 14px; margin-bottom: 8px;
+    padding-left: 10px; border-left: 3px solid var(--metal-rust);
+    animation: slideIn 0.3s ease-out forwards; opacity: 0; transform: translateX(-20px);
 }
-
-@media(max-width:1024px){
+@keyframes slideIn { to { opacity: 1; transform: translateX(0); } }
 
-    #left-panel{
-        width:260px;
-    }
+.log-info { color: var(--text-secondary); }
+.log-warn { color: var(--gold-dirty); border-left-color: var(--gold-dirty); }
+.log-crit { color: var(--blood-red); border-left-color: var(--blood-red); font-weight: bold; }
 
-    #right-panel{
-        display:none;
-    }
+/* SCROLLBAR DENTE DE ENGRENAGEM */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--void-black); border-left: 1px solid var(--metal-border); }
+::-webkit-scrollbar-thumb { background: var(--metal-rust); background-image: repeating-linear-gradient(0deg, transparent, transparent 4px, var(--surface-dark) 4px, var(--surface-dark) 8px); }
 
-    #event-log{
-        left:290px;
-    }
+/* OVERLAY DE CRISE */
+#crisis-overlay {
+    position: absolute; inset: 0; background: rgba(107, 21, 21, 0.85);
+    z-index: 1000; display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(5px);
 }
-
-@media(max-width:768px){
-
-    #top-hud{
-        flex-wrap:wrap;
-        height:auto;
-        padding:8px;
-        gap:8px;
-    }
-
-    .resource{
-        min-width:95px;
-    }
-
-    #left-panel{
-        width:100%;
-        height:260px;
-        top:auto;
-        bottom:0;
-        left:0;
-        border-radius:20px 20px 0 0;
-    }
-
-    #event-log,
-    #minimap{
-        display:none;
-    }
+#crisis-overlay.hidden { display: none; }
+.crisis-scanline {
+    position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0.1) 50%, rgba(255,255,255,0));
+    background-size: 100% 8px; animation: scan 2s linear infinite; opacity: 0.3;
 }
-
-</style>
+@keyframes scan { 0% { background-position: 0 -100vh; } 100% { background-position: 0 100vh; } }
+.crisis-content { text-align: center; z-index: 2; }
+#crisis-title { font-family: var(--font-title); font-size: 48px; color: #fff; letter-spacing: 10px; animation: flicker-light 0.1s infinite; margin-bottom: 20px;}
+#crisis-typewriter { font-family: var(--font-mono); font-size: 24px; color: var(--text-primary); margin-bottom: 30px;}
+#crisis-timer { font-family: var(--font-mono); font-size: 64px; color: var(--blood-bright); font-weight: bold;}</style>
 </head>
-
 <body>
 
-<div id="game-root">
+    <canvas id="ash-canvas"></canvas>
 
-    <!-- WORLD -->
-
-    <div id="world-viewport">
-
-        <div id="world">
-
-            <div class="fog-layer"></div>
-
-            <!-- BUILDINGS -->
-
-            <div class="building" style="left:1200px; top:1400px;"></div>
-            <div class="building" style="left:1700px; top:1600px;"></div>
-            <div class="building" style="left:2200px; top:1800px;"></div>
-
+    <div id="crisis-overlay" class="hidden">
+        <div class="crisis-scanline"></div>
+        <div class="crisis-content">
+            <h1 id="crisis-title">ALERTA DE SISTEMA</h1>
+            <p id="crisis-typewriter"></p>
+            <div id="crisis-timer">00:00:00</div>
         </div>
-
     </div>
 
-    <!-- TOP HUD -->
-
-    <header id="top-hud">
-
-        <div class="hud-left">
-
-            <div class="resource">
-                <div class="resource-title">Biomassa</div>
-                <div class="resource-value">12.4K</div>
-                <div class="resource-icon">🫀</div>
+    <main id="ui-layer">
+        
+        <header id="top-bar">
+            <div class="resource-capsule">
+                <div class="res-icon" id="icon-bio"></div>
+                <div class="res-info">
+                    <span class="res-label">BIOMASSA</span>
+                    <span class="res-value" id="val-bio">300</span>
+                </div>
+            </div>
+            
+            <div class="resource-capsule">
+                <div class="res-icon" id="icon-cop"></div>
+                <div class="res-info">
+                    <span class="res-label">COBRE</span>
+                    <span class="res-value" id="val-cop">150</span>
+                </div>
             </div>
 
-            <div class="resource">
-                <div class="resource-title">Cobre</div>
-                <div class="resource-value">7.2K</div>
-                <div class="resource-icon">⚙</div>
+            <div class="steam-gauge-container">
+                <span class="res-label">PRESSÃO DO NÚCLEO</span>
+                <div class="steam-bar" id="steam-bar">
+                    </div>
+                <span class="res-value amber-glow" id="val-vap">100%</span>
             </div>
+        </header>
 
-            <div class="resource">
-                <div class="resource-title">Vapor</div>
-                <div class="resource-value">82%</div>
-                <div class="resource-icon">♨</div>
+        <aside id="side-left">
+            <div class="panel header-panel">
+                <h2>CÓDICE DE CONSTRUÇÃO</h2>
             </div>
+            <div id="building-grid" class="grid-2x2">
+                </div>
+        </aside>
 
-        </div>
-
-        <div class="hud-center">
-
-            <div class="resource">
-                <div class="resource-title">Temperatura</div>
-                <div class="resource-value">-38°C</div>
-                <div class="resource-icon">❄</div>
+        <aside id="side-right">
+            <div class="panel clock-panel">
+                <h2>CICLO ATUAL</h2>
+                <div class="clock-display" id="day-counter">DIA 01</div>
+                <div class="invasion-warning" id="invasion-warning">
+                    PRÓXIMO ATAQUE EM <span id="days-to-invasion">5</span> DIAS
+                </div>
             </div>
+        </aside>
 
-            <div class="resource">
-                <div class="resource-title">Moral</div>
-                <div class="resource-value">61%</div>
-                <div class="resource-icon">☩</div>
+        <footer id="bottom-bar">
+            <div class="panel log-panel">
+                <div id="colony-log">
+                    </div>
             </div>
+        </footer>
 
-        </div>
+    </main>
 
-        <div class="hud-right">
-
-            <div class="resource">
-                <div class="resource-title">Dia Imperial</div>
-                <div class="resource-value">XII</div>
-                <div class="resource-icon">⌛</div>
-            </div>
-
-            <div class="resource">
-                <div class="resource-title">Clima</div>
-                <div class="resource-value">Nevasca</div>
-                <div class="resource-icon">☠</div>
-            </div>
-
-        </div>
-
-    </header>
-
-    <!-- LEFT PANEL -->
-
-    <aside class="panel" id="left-panel">
-
-        <div class="panel-header">
-            <div class="panel-title">Arquitetura Imperial</div>
-            <div>⚙</div>
-        </div>
-
-        <div class="build-list">
-
-            <div class="build-card" data-building="reactor">
-
-                <div class="build-name">
-                    Reator Carnis
-                </div>
-
-                <div class="build-desc">
-                    Núcleo biomecânico alimentado por biomassa fervente e pressão térmica.
-                </div>
-
-                <div class="build-meta">
-                    <div class="meta">+ Vapor</div>
-                    <div class="meta">+ Calor</div>
-                    <div class="meta">Risco Alto</div>
-                </div>
-
-            </div>
-
-            <div class="build-card" data-building="barracks">
-
-                <div class="build-name">
-                    Caserna Legionária
-                </div>
-
-                <div class="build-desc">
-                    Forma soldados congelados e máquinas romanas de contenção.
-                </div>
-
-                <div class="build-meta">
-                    <div class="meta">Militar</div>
-                    <div class="meta">Defesa</div>
-                    <div class="meta">Moral</div>
-                </div>
-
-            </div>
-
-            <div class="build-card" data-building="cult">
-
-                <div class="build-name">
-                    Catedral de Carne
-                </div>
-
-                <div class="build-desc">
-                    Estrutura ritualística que reduz o medo através de sacrifícios térmicos.
-                </div>
-
-                <div class="build-meta">
-                    <div class="meta">Ocultismo</div>
-                    <div class="meta">Fanatismo</div>
-                    <div class="meta">Corrupção</div>
-                </div>
-
-            </div>
-
-        </div>
-
-    </aside>
-
-    <!-- RIGHT PANEL -->
-
-    <aside class="panel" id="right-panel">
-
-        <div class="panel-header">
-            <div class="panel-title">Cidade Imperial</div>
-            <div>☩</div>
-        </div>
-
-        <div class="city-stats">
-
-            <div class="stat">
-
-                <div class="stat-label">
-                    <span>Eficiência</span>
-                    <span>74%</span>
-                </div>
-
-                <div class="bar">
-                    <div class="bar-fill" style="width:74%;"></div>
-                </div>
-
-            </div>
-
-            <div class="stat">
-
-                <div class="stat-label">
-                    <span>Fome</span>
-                    <span>31%</span>
-                </div>
-
-                <div class="bar">
-                    <div class="bar-fill" style="width:31%;"></div>
-                </div>
-
-            </div>
-
-            <div class="stat">
-
-                <div class="stat-label">
-                    <span>Doenças</span>
-                    <span>44%</span>
-                </div>
-
-                <div class="bar">
-                    <div class="bar-fill" style="width:44%;"></div>
-                </div>
-
-            </div>
-
-            <div class="stat">
-
-                <div class="stat-label">
-                    <span>Corrupção</span>
-                    <span>66%</span>
-                </div>
-
-                <div class="bar">
-                    <div class="bar-fill" style="width:66%;"></div>
-                </div>
-
-            </div>
-
-        </div>
-
-    </aside>
-
-    <!-- EVENT LOG -->
-
-    <section id="event-log">
-
-        <div class="log">
-            <div class="log-time">03:12 IMPERIAL</div>
-            <div class="log-text">
-                A temperatura caiu abaixo do limite térmico aceitável.
-            </div>
-        </div>
-
-        <div class="log">
-            <div class="log-time">03:19 IMPERIAL</div>
-            <div class="log-text">
-                Cultistas biomecânicos detectados nos túneis externos.
-            </div>
-        </div>
-
-        <div class="log">
-            <div class="log-time">03:31 IMPERIAL</div>
-            <div class="log-text">
-                Vapor arterial excedeu o limite operacional.
-            </div>
-        </div>
-
-    </section>
-
-    <!-- MINIMAP -->
-
-    <div id="minimap">
-        <div id="minimap-scan"></div>
-    </div>
-
-    <!-- BUILD OVERLAY -->
-
-    <div id="build-overlay">
-
-        <div class="grid"></div>
-
-        <div id="placement"></div>
-
-    </div>
-
-    <!-- OVERLAYS -->
-
-    <div class="overlay active" id="cold-overlay"></div>
-    <div class="overlay" id="danger-overlay"></div>
-
-</div>
-
-<script>
-
-/* =========================================================
-   IMPERIUM CARNIS ENGINE
-========================================================= */
-
-const world = document.getElementById('world');
-const viewport = document.getElementById('world-viewport');
-
-let camera = {
-    x:-1600,
-    y:-1500,
-    zoom:1
-};
-
-let isDragging = false;
-
-let dragStart = {
-    x:0,
-    y:0
-};
-
-function updateCamera(){
-
-    world.style.transform =
-        `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})`;
-}
-
-updateCamera();
-
-/* =========================================================
-   DRAG CAMERA
-========================================================= */
-
-viewport.addEventListener('mousedown',(e)=>{
-
-    isDragging = true;
-
-    dragStart.x = e.clientX - camera.x;
-    dragStart.y = e.clientY - camera.y;
-});
-
-window.addEventListener('mouseup',()=>{
-
-    isDragging = false;
-});
-
-window.addEventListener('mousemove',(e)=>{
-
-    if(!isDragging) return;
-
-    camera.x = e.clientX - dragStart.x;
-    camera.y = e.clientY - dragStart.y;
-
-    updateCamera();
-});
-
-/* =========================================================
-   ZOOM
-========================================================= */
-
-viewport.addEventListener('wheel',(e)=>{
-
-    e.preventDefault();
-
-    const delta = e.deltaY * -0.001;
-
-    camera.zoom += delta;
-
-    camera.zoom = Math.max(.35, Math.min(2.5, camera.zoom));
-
-    updateCamera();
-});
-
-/* =========================================================
-   BUILD MODE
-========================================================= */
-
-const overlay = document.getElementById('build-overlay');
-const placement = document.getElementById('placement');
-
-document.querySelectorAll('.build-card').forEach(card=>{
-
-    card.addEventListener('click',()=>{
-
-        overlay.classList.toggle('active');
-    });
-});
-
-window.addEventListener('mousemove',(e)=>{
-
-    placement.style.left = `${e.clientX - 64}px`;
-    placement.style.top = `${e.clientY - 64}px`;
-});
-
-/* =========================================================
-   EVENT LOG
-========================================================= */
-
-const logContainer = document.getElementById('event-log');
-
-const messages = [
-
-    'Legionários biomecânicos chegaram da muralha norte.',
-    'Uma nevasca cobre as estruturas industriais.',
-    'O núcleo térmico entrou em estado crítico.',
-    'Os cultistas iniciaram o ritual da fornalha.',
-    'As ruas congeladas colapsaram sob o gelo.',
-    'Mutação detectada nas câmaras de biomassa.',
-    'A fome aumentou entre os trabalhadores.'
-];
-
-function createLog(){
-
-    const log = document.createElement('div');
-    log.className = 'log';
-
-    const t = new Date();
-
-    log.innerHTML = `
-        <div class="log-time">
-            ${t.getHours()}:${t.getMinutes().toString().padStart(2,'0')} IMPERIAL
-        </div>
-
-        <div class="log-text">
-            ${messages[Math.floor(Math.random()*messages.length)]}
-        </div>
-    `;
-
-    logContainer.prepend(log);
-
-    while(logContainer.children.length > 8){
-        logContainer.removeChild(logContainer.lastChild);
-    }
-}
-
-setInterval(createLog,5000);
-
-/* =========================================================
-   SNOW GENERATOR
-========================================================= */
-
-function createSnow(){
-
-    const snow = document.createElement('div');
-
-    snow.className = 'snow';
-
-    snow.style.left = Math.random()*window.innerWidth + 'px';
-
-    const size = Math.random()*3;
-
-    snow.style.width = size + 'px';
-    snow.style.height = size + 'px';
-
-    snow.style.animationDuration =
-        (5 + Math.random()*10) + 's';
-
-    snow.style.opacity = Math.random();
-
-    document.body.appendChild(snow);
-
-    setTimeout(()=>{
-        snow.remove();
-    },15000);
-}
-
-setInterval(createSnow,40);
-
-/* =========================================================
-   DANGER OVERLAY
-========================================================= */
-
-setInterval(()=>{
-
-    const danger = document.getElementById('danger-overlay');
-
-    danger.classList.add('active');
-
-    setTimeout(()=>{
-        danger.classList.remove('active');
-    },1200);
-
-},14000);
-
-/* =========================================================
-   CINEMATIC CAMERA DRIFT
-========================================================= */
-
-setInterval(()=>{
-
-    camera.x += (Math.random()*10)-5;
-    camera.y += (Math.random()*10)-5;
-
-    updateCamera();
-
-},2000);
-
-/* =========================================================
-   PERFORMANCE
-========================================================= */
-
-document.body.style.transform = 'translateZ(0)';
-
-</script>
-
+    <script src="UIManager.js"></script>
+    <script src="CrisisSystem.js"></script>
+    <script src="colonymanager.js"></script>
 </body>
 </html>
