@@ -15,6 +15,7 @@ class ColonyManager {
     }
 
     init() {
+        window.WorldEngine.init();
         window.UIManager.init();
         window.CrisisSystem.init();
         
@@ -60,20 +61,28 @@ class ColonyManager {
         }
     }
 
-    build(id) {
-        const bldg = this.catalog.find(b => b.id === id);
-        if (!bldg) return;
+build(id, targetX = null, targetY = null) {
+    const bldg = this.catalog.find(b => b.id === id);
+    if (!bldg) return;
 
-        if (this.resources.cop >= bldg.cost) {
-            this.resources.cop -= bldg.cost;
-            bldg.active = true;
-            window.UIManager.updateResource('cop', this.resources.cop, -bldg.cost);
-            window.UIManager.addLog(`Arquitetura ${bldg.name} implementada na malha da cidade.`, "info");
-            this.updateAllUI();
-        } else {
-            window.UIManager.addLog("Cobre insuficiente para protocolo.", "warn");
-        }
+    if (this.resources.cop >= bldg.cost) {
+        this.resources.cop -= bldg.cost;
+        bldg.active = true;
+
+        const gridX = targetX !== null ? targetX : Math.floor(this.placedBuildings.length * 1.5);
+        const gridY = targetY !== null ? targetY : 10;
+
+        window.WorldEngine.placedBuildings.push({ x: gridX, y: gridY, type: id });
+
+        window.UIManager.updateResource('cop', this.resources.cop, -bldg.cost);
+        window.UIManager.addLog(`Arquitetura ${bldg.name} enraizada nas coordenadas [${gridX}, ${gridY}].`, "info");
+        this.updateAllUI();
+
+        window.WorldEngine.setConstructionPreview(null);
+    } else {
+        window.UIManager.addLog("Cobre insuficiente para protocolo.", "warn");
     }
+}
 
     updateAllUI() {
         window.UIManager.updateResource('bio', this.resources.bio, 0);
