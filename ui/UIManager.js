@@ -127,7 +127,7 @@ window.UIManager = {
                 <div class="bldg-cost">CUSTO: ${b.cost} COP</div>
                 <div class="bldg-cost" style="color:var(--flesh-green)">+${b.prod}/s</div>
             `;
-            card.onclick = () => clickHandler(b.id);
+            card.onclick = () => window.WorldEngine.setConstructionPreview(b.id);
             grid.appendChild(card);
         });
     }
